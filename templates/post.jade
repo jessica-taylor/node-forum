@@ -3,13 +3,13 @@ mixin showComments(coms)
   ul
     each com in coms
       li
-        p= com.content
-        +showComments(com.children)
+        p= com.Content
+        +showComments(com.Children)
 
 html(lang="en")
   head
     title Forum
   body
-    h1= post.title
-    p= post.content
+    h1= post.Title
+    p= post.Content
     +showComments(comments)

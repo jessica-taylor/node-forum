@@ -8,9 +8,11 @@
     "build": "./compile"
   },
   "dependencies": {
+    "body-parser": "^1.18.3",
     "express": "^4.16.4",
     "jade": "^1.11.0",
-    "sqlite3": "^4.0.6"
+    "sqlite3": "^4.0.6",
+    "underscore": "^1.9.1"
   },
   "devDependencies": {}
 }

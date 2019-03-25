@@ -5,8 +5,9 @@ html(lang="en")
   head
     title Forum
   body
-    h1 A forum!
+    h1 Information ecology forum
+    a(href = '/newpost') Submit new post
     each post in posts
       h3
-        a(href = '/post/' + post.id)= post.title
+        a(href = '/post/' + post.ID)= post.Title
 

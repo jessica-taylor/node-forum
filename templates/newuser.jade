@@ -1,0 +1,19 @@
+
+html(lang="en")
+  head
+    title Forum
+  body
+    h1 Register
+    each err in errors
+      p Error: #{err}
+    form(method="post")
+      p Email: 
+        input(type="text", name="email")
+      p Name: 
+        input(type="text", name="name")
+      p Password (at least 10 characters):
+        input(type="password", name="password")
+      p Confirm password:
+        input(type="password", name="password2")
+      br
+      input(type="submit", value="Register")

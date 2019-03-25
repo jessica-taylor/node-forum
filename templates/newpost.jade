@@ -1,0 +1,13 @@
+
+html(lang="en")
+  head
+    title Forum
+  body
+    h1 New post
+    form(method="post")
+      p Title: 
+        input(type="text", name="title")
+      p Content:
+      textarea(name="content", rows="50", cols="80")
+      br
+      input(type="submit", value="Submit post")
