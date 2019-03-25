@@ -7,6 +7,10 @@
   "scripts": {
     "build": "./compile"
   },
-  "dependencies": {},
+  "dependencies": {
+    "express": "^4.16.4",
+    "jade": "^1.11.0",
+    "sqlite3": "^4.0.6"
+  },
   "devDependencies": {}
 }
