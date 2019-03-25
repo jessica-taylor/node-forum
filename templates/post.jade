@@ -1,0 +1,15 @@
+
+mixin showComments(coms)
+  ul
+    each com in coms
+      li
+        p= com.content
+        +showComments(com.children)
+
+html(lang="en")
+  head
+    title Forum
+  body
+    h1= post.title
+    p= post.content
+    +showComments(comments)

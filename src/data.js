@@ -2,40 +2,44 @@
 var sqlite = require('sqlite3').verbose();
 
 function getDatabase() {
-  return new sqlite.Database(':memory:');
+  return new sqlite.Database('database.sqlite3');
+}
+
+let tables = {
+  "User":  ["Name tinytext not null",
+            "Description mediumtext not null",
+            "CreationTime timestamp not null",
+            "ID bigint not null primary key autoincrement"],
+  "Post": ["Owner bigint not null",
+            "Title tinytext not null",
+            "Content mediumtext not null",
+            "CreationTime timestamp not null",
+            "ID bigint not null primary key autoincrement"],
+  "Comment": ["Owner bigint not null",
+              "Parent bigint not null",
+              "Content mediumtext not null",
+              "CreationTime timestamp not null",
+              "ID bigint not null primary key autoincrement"]
+};
+
+function dropTables(db) {
+  for (let tableName in tables) {
+    db.run('drop table ' + tableName);
+  }
 }
 
 function makeTables(db) {
-  let tables = {
-    "User":  ["Name tinytext not null",
-              "Description mediumtext not null",
-              "CreationTime timestamp not null",
-              "ID bigint not null primary key"],
-    "Post": ["Owner bigint not null",
-              "Title tinytext not null",
-              "Content mediumtext not null",
-              "CreationTime timestamp not null",
-              "ID bigint not null primary key"],
-    "Comment": ["Owner bigint not null",
-                "Parent bigint not null",
-                "Content mediumtext not null",
-                "CreationTime timestamp not null",
-                "ID bigint not null primary key"]
-  };
   for (let tableName in tables) {
-    db.run('create table ' + tableName + ' (' + tables[tableName].join(', ') + ')');
+    db.run('create table if not exists ' + tableName + ' (' + tables[tableName].join(', ') + ')');
   }
 }
 
 function prepareStatements(db) {
-  let newId = "(@ids := ifnull(@ids, 0) + 1)";
   let stmts = {
-    createUser: "insert into User (Name, Description, CreationTime, ID, values (?, ?, ?, " + newId + ",",
-    createPost: "insert into Post (Owner, Title, Content, CreationTime, ID, values (?, ?, ?, ?, " + newId + ",",
-    createComment: "insert into Comment (Owner, Parent, Content, CreationTime, ID, values (?, ?, ?, ?, " + newId + ",",
-    lastUserID: "select max(ID, from User",
-    lastPostID: "select max(ID, from Post",
-    lastCommentID: "select max(ID, from Comment",
+    createUser: "insert into User (Name, Description, CreationTime) values (?, ?, ?)",
+    createPost: "insert into Post (Owner, Title, Content, CreationTime) values (?, ?, ?, ?)",
+    createComment: "insert into Comment (Owner, Parent, Content, CreationTime) values (?, ?, ?, ?)",
+    lastID: "select last_insert_rowid()",
     lookupUser: "select * from User where ID = ?",
     lookupPost: "select * from Post where ID = ?",
     lookupComment: "select * from Comment where ID = ?",
@@ -60,15 +64,17 @@ function prepareStatements(db) {
 
 function makeIndices(db) {
   let ixs =
-    [ "create unique index IxUserId on User (ID)"
-    , "create unique index IxPostId on Post (ID)"
-    , "create unique index IxCommentId on Comment (ID)"
-    , "create unique index IxCommentParent on Comment (Parent)"
-    , "create unique index IxUserCreationTime on User (CreationTime)"
-    , "create unique index IxPostCreationTime on Post (CreationTime)"
-    , "create unique index IxCommentCreationTime on Comment (CreationTime)"
+    [ "IxUserId on User (ID)"
+    , "IxPostId on Post (ID)"
+    , "IxCommentId on Comment (ID)"
+    , "IxCommentParent on Comment (Parent)"
+    , "IxUserCreationTime on User (CreationTime)"
+    , "IxPostCreationTime on Post (CreationTime)"
+    , "IxCommentCreationTime on Comment (CreationTime)"
     ];
-  ixs.forEach(ix => db.run(ix));
+  ixs.forEach(ix => {
+    db.run('create unique index if not exists ' + ix);
+  });
 }
 
 module.exports = {

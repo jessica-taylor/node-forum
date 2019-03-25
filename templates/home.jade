@@ -1,0 +1,12 @@
+
+- if (posts == undefined) posts = []
+
+html(lang="en")
+  head
+    title Forum
+  body
+    h1 A forum!
+    each post in posts
+      h3
+        a(href = '/post/' + post.id)= post.title
+
