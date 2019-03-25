@@ -60,6 +60,8 @@ app.get('/newuser', (req, res) => {
 
 app.post('/newuser', (req, res) => {
   let fields = _.clone(req.body);
+  fields.name = fields.name.trim();
+  fields.email = fields.email.trim();
   let errs = [];
   if (fields.password != fields.password2) {
     errs.push("Passwords don't match");
@@ -78,24 +80,52 @@ app.post('/newuser', (req, res) => {
       if (existing != null) {
         errs.push("Email already taken");
       }
-      if (errs.length > 0) {
-        res.send(templates.newuser({errors: errs}));
-      } else {
-        fields.description = 'No description yet';
-        data.createUser(db, fields, function(err, uid) {
-          if (err) {
-            internalError(res, err);
-          } else {
-            res.redirect('/newuser2');
+      db.statements.lookupUserByName.get(fields.name, function(err, existing2) {
+        if (err) {
+          internalError(res, err);
+        } else {
+          if (existing2 != null) {
+            errs.push("Name already taken");
           }
-        });
-      }
+          if (errs.length > 0) {
+            res.send(templates.newuser({errors: errs}));
+          } else {
+            fields.description = 'No description yet';
+            data.createUser(db, fields, function(err, uid) {
+              if (err) {
+                internalError(res, err);
+              } else {
+                res.send(templates.newuser2({uid: uid}));
+              }
+            });
+          }
+        }
+      });
     }
   });
 });
 
-app.get('/newuser2', (req, res) => {
-  res.send(templates.newuser2({}));
+app.get('/user/:userId', (req, res) => {
+  let id = req.params.userId;
+  db.statements.lookupUser.get(id, (err, user) => {
+    if (err) {
+      internalError(res, err);
+    } else if (user == undefined) {
+      res.send('user not found');
+    } else {
+      res.send(templates.user({user: user}));
+    }
+  });
+});
+
+app.get('/allusers', (req, res) => {
+  db.statements.allUsers.all((err, users) => {
+    if (err) {
+      internalError(err);
+    } else {
+      res.send(templates.allusers({users: users}));
+    }
+  });
 });
 
 

@@ -60,6 +60,7 @@ function prepareStatements(db) {
     lastID: "select last_insert_rowid()",
     lookupUser: "select * from User where ID = ?",
     lookupUserByEmail: "select * from User where Email = ?",
+    lookupUserByName: "select * from User where Name = ?",
     lookupPost: "select * from Post where ID = ?",
     lookupComment: "select * from Comment where ID = ?",
     updateUser: "update User set Name = ?, Description = ? where ID = ?",
@@ -72,7 +73,8 @@ function prepareStatements(db) {
     latestCommentsBefore: "select ID, Content from Comment where CreationTime < ? order by CreationTime desc",
     latestPostsByUserBefore: "select ID, Title from Post where CreationTime < ? and Owner = ? order by CreationTime desc",
     latestCommentsByUserBefore: "select ID, Content from Comment where CreationTime < ? and Owner = ? order by CreationTime desc",
-    commentsByParent: "select ID from Comment where Parent = ?"
+    commentsByParent: "select ID from Comment where Parent = ?",
+    allUsers: "select ID, Name from User"
   };
   let prepared = {};
   for (let k in stmts) {
