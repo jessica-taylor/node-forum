@@ -1,0 +1,12 @@
+{
+  "name": "node_forum",
+  "version": "0.0.1",
+  "description": "A forum",
+  "license": "MIT",
+  "author": "Jessica Taylor <jessica.liu.taylor@gmail.com> (http://jessic.at/)",
+  "scripts": {
+    "build": "./compile"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
