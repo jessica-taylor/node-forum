@@ -27,7 +27,7 @@ let tables = {
             "Email tinytext not null",
             "PasswordHash blob not null",
             "EmailConfirmed boolean not null",
-            "LoginToken blob",
+            "LoginToken tinytext",
             "LoginTokenTime integer"],
   "Post": ["Owner integer not null",
            "Title tinytext not null",
@@ -152,6 +152,7 @@ function latestPostsBefore(db, time, cb) {
 
 module.exports = {
   getDatabase: getDatabase,
+  hashPassword: hashPassword,
   createUser: createUser,
   createPost: createPost,
   lookupPost: lookupPost,

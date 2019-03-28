@@ -4,6 +4,7 @@ var jade = require('jade');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var _ = require('underscore');
+var uuidv5 = require('uuid/v5');
 
 var data = require('./data');
 
@@ -20,9 +21,6 @@ fs.readdirSync('templates').forEach(fileName => {
     jade.compileFile('templates/' + fileName, {});
 });
 
-console.log(templates);
-console.log(templates.home({}));
-
 let app = express();
 let db = data.getDatabase();
 
@@ -30,26 +28,86 @@ function findLoginUser(req, cont) {
   if (req.cookies.loginToken) {
     db.statements.lookupUser.get(req.cookies.userID, function(err, user) {
       if (err) {
-        cont(null, null);
-      } else if (user.LoginToken != req.cookies.loginToken) {
+        cont(err);
+      } else if (user == null || user.LoginToken != req.cookies.loginToken) {
         cont(null, null);
       } else {
         cont(null, user);
       }
     });
+  } else {
+    cont(null, null);
   }
+}
+
+function doLogin(res, user, cont) {
+  let token = uuidv5('jessic.at', uuidv5.DNS);
+  db.statements.setLoginToken.run(token, Date.now(), user.ID, function(err) {
+    if (err) {
+      cont(err);
+    } else {
+      res.cookie('userID', user.ID);
+      res.cookie('loginToken', token);
+      cont(null);
+    }
+  });
 }
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 
 app.get('/', (req, res) => {
-  data.latestPostsBefore(db, 9999999999999, (err, posts) => {
+  findLoginUser(req, function(err, user) {
     if (err) {
       internalError(res, err);
     } else {
-      res.send(templates.home({posts: posts}));
+      data.latestPostsBefore(db, 9999999999999, (err, posts) => {
+        if (err) {
+          internalError(res, err);
+        } else {
+          res.send(templates.home({posts: posts, user: user}));
+        }
+      });
+    }
+  });
+});
 
+app.get('/login', (req, res) => {
+  res.send(templates.login({}));
+});
+
+app.post('/login', (req, res) => {
+  let fields = _.clone(req.body);
+  db.statements.lookupUserByEmail.get(fields.email, function(err, user) {
+    if (err) {
+      internalError(res, err);
+    } else if (user == null) {
+      res.send('user with that email not found');
+    } else if (!data.hashPassword(fields.password).equals(user.PasswordHash)) {
+      console.log('passhash: ', user.PasswordHash, data.hashPassword(fields.password));
+      res.send('wrong password');
+    } else {
+      doLogin(res, user, function(err) {
+        if (err) {
+          internalError(res, err);
+        } else {
+          res.redirect('/');
+        }
+      });
+    }
+  });
+});
+
+app.post('/signout', (req, res) => {
+  findLoginUser(req, function(err, user) {
+    if (err) {
+      internalError(res, err);
+    } else if (user == null) {
+      res.send('not logged in');
+    } else {
+      res.clearCookie('userID');
+      res.clearCookie('loginToken');
+      res.redirect('/');
     }
   });
 });

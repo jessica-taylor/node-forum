@@ -7,9 +7,19 @@ html(lang="en")
   body
     h1 Information ecology forum
     p
-      a(href = '/newpost') Submit new post
-    p
       a(href = '/allusers') All users
+    if user
+      p
+        a(href = '/user/' + user.ID)= user.Name
+      form(action = '/signout', method = 'post')
+        button(type = 'submit') Sign out
+      p
+        a(href = '/newpost') Submit new post
+    else
+      p
+        a(href = '/newuser') Register
+      p
+        a(href = '/login') Log in
     each post in posts
       h3
         a(href = '/post/' + post.ID)= post.Title
