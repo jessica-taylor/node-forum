@@ -1,10 +1,8 @@
+extends ./page.jade
 
-html(lang="en")
-  head
-    title Forum
-  body
-    h1 Registration
-    p Registration is in process.  Please confirm your email.
-    a(href="/user/" + uid) Your personal page
-    br
-    a(href="/") Back to main page
+block body
+  h1 Registration
+  p Registration is in process.  Please confirm your email.
+  a(href="/user/" + uid) Your personal page
+  br
+  a(href="/") Back to main page

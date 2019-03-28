@@ -1,11 +1,8 @@
+extends ./page.jade
 
-
-html(lang="en")
-  head
-    title Forum
-  body
-    h1 All users
-    each user in users
-      h3
-        a(href = '/user/' + user.ID)= user.Name
+block body
+  h1 All users
+  each user in users
+    h3
+      a(href = '/user/' + user.ID)= user.Name
 

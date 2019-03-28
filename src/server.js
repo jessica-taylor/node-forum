@@ -55,6 +55,7 @@ function doLogin(res, user, cont) {
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
+app.use(express.static('public'));
 
 app.get('/', (req, res) => {
   findLoginUser(req, function(err, user) {
