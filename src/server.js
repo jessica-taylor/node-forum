@@ -2,6 +2,7 @@ var express = require('express');
 var fs = require('fs');
 var jade = require('jade');
 var bodyParser = require('body-parser');
+var cookieParser = require('cookie-parser');
 var _ = require('underscore');
 
 var data = require('./data');
@@ -25,7 +26,22 @@ console.log(templates.home({}));
 let app = express();
 let db = data.getDatabase();
 
+function findLoginUser(req, cont) {
+  if (req.cookies.loginToken) {
+    db.statements.lookupUser.get(req.cookies.userID, function(err, user) {
+      if (err) {
+        cont(null, null);
+      } else if (user.LoginToken != req.cookies.loginToken) {
+        cont(null, null);
+      } else {
+        cont(null, user);
+      }
+    });
+  }
+}
+
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser());
 
 app.get('/', (req, res) => {
   data.latestPostsBefore(db, 9999999999999, (err, posts) => {

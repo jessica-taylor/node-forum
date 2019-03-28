@@ -6,7 +6,10 @@ html(lang="en")
     title Forum
   body
     h1 Information ecology forum
-    a(href = '/newpost') Submit new post
+    p
+      a(href = '/newpost') Submit new post
+    p
+      a(href = '/allusers') All users
     each post in posts
       h3
         a(href = '/post/' + post.ID)= post.Title
