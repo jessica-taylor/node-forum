@@ -11,5 +11,11 @@ html(lang="en")
     title Forum
   body
     h1= post.Title
+    if owner
+      p by
+        =" "
+        a(href='/user/' + owner.ID)= owner.Name
+    else
+      p (post owner not found!)
     p= post.Content
     +showComments(comments)

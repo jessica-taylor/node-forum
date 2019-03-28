@@ -98,7 +98,7 @@ app.post('/login', (req, res) => {
   });
 });
 
-app.post('/signout', (req, res) => {
+app.get('/signout', (req, res) => {
   findLoginUser(req, function(err, user) {
     if (err) {
       internalError(res, err);
@@ -117,13 +117,19 @@ app.get('/newpost', (req, res) => {
 });
 
 app.post('/newpost', (req, res) => {
-  let fields = _.clone(req.body);
-  fields.owner = 0;
-  data.createPost(db, fields, (err, id) => {
+  findLoginUser(req, function(err, user) {
     if (err) {
       internalError(res, err);
     } else {
-      res.redirect('/post/' + id);
+      let fields = _.clone(req.body);
+      fields.owner = user.ID;
+      data.createPost(db, fields, (err, id) => {
+        if (err) {
+          internalError(res, err);
+        } else {
+          res.redirect('/post/' + id);
+        }
+      });
     }
   });
 });
@@ -211,14 +217,16 @@ app.get('/post/:postId', (req, res) => {
     } else if (post == undefined) {
       res.send('post not found');
     } else {
-      let comments = [
-        {Content: 'top',
-         Children: [
-           {Content: 'child 1', Children: []},
-           {Content: 'child 2', Children: []}]},
-        {Content: 'bottom', Children: []}
-      ];
-      res.send(templates.post({post: post, comments: comments}));
+      db.statements.lookupUser.get(post.Owner, function(err, owner)  {
+        let comments = [
+          {Content: 'top',
+           Children: [
+             {Content: 'child 1', Children: []},
+             {Content: 'child 2', Children: []}]},
+          {Content: 'bottom', Children: []}
+        ];
+        res.send(templates.post({post: post, owner: owner, comments: comments}));
+      });
     }
   });
 });
