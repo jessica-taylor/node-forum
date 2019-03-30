@@ -1,11 +1,29 @@
 extends ./page.jade
 
+block head
+  script(type = "text/javascript").
+    function getReplyBox(parentId) {
+      let form = $('<form>').attr('action', '/newcomment').attr('method', 'post')
+        .append($('<textarea>').attr('name', 'content').attr('rows', '6').attr('cols', '50'))
+        .append($('<input>').attr('type', 'hidden').attr('name', 'post').attr('value', #{post.ID}))
+        .append($('<br>'))
+        .append($('<input>').attr('type', 'submit').attr('value', 'Reply'));
+      if (parentId != null) {
+        form.append($('<input>').attr('type', 'hidden').attr('name', 'parent').attr('value', parentId));
+      }
+      return form;
+    }
+    $(function() {
+      $('#main_reply').append(getReplyBox(null));
+    });
+
 mixin showComments(coms)
   ul
     each com in coms
       li
-        p= com.Content
-        +showComments(com.Children)
+        div.comment(id = 'comment' + com.ID)
+          p= com.Content
+          +showComments(com.Children)
 
 block body
   h1= post.Title
@@ -17,3 +35,4 @@ block body
     p (post owner not found!)
   p= post.Content
   +showComments(comments)
+  #main_reply

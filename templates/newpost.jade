@@ -2,7 +2,7 @@ extends ./page.jade
 
 block body
   h1 New post
-  form(method="post")
+  form(action="/newpost", method="post")
     p Title: 
       input(type="text", name="title")
     p Content:

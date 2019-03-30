@@ -186,6 +186,27 @@ app.post('/newuser', (req, res) => {
   });
 });
 
+app.post('/newcomment', (req, res) => {
+  findLoginUser(req, function(err, user) {
+    if (err) {
+      internalError(res, err);
+    } else if (user == null) {
+      res.send('user not found');
+    } else {
+      let fields = _.clone(req.body);
+      console.log('fields', fields);
+      fields.owner = user.ID;
+      data.createComment(db, fields, (err, id) => {
+        if (err) {
+          internalError(res, err);
+        } else {
+          res.redirect('/post/' + fields.post);
+        }
+      });
+    }
+  });
+});
+
 app.get('/user/:userId', (req, res) => {
   let id = req.params.userId;
   db.statements.lookupUser.get(id, (err, user) => {
@@ -219,14 +240,39 @@ app.get('/post/:postId', (req, res) => {
       res.send('post not found');
     } else {
       db.statements.lookupUser.get(post.Owner, function(err, owner)  {
-        let comments = [
-          {Content: 'top',
-           Children: [
-             {Content: 'child 1', Children: []},
-             {Content: 'child 2', Children: []}]},
-          {Content: 'bottom', Children: []}
-        ];
-        res.send(templates.post({post: post, owner: owner, comments: comments}));
+        if (err) {
+          internalError(res, err);
+        } else {
+          db.statements.commentsByPost.all(post.ID, function(err, comments) {
+            if (err) {
+              internalError(res, err);
+            } else {
+              let toplevel = [];
+              for (var i = 0; i < comments.length; ++i) {
+                comments[i].Children = [];
+                var foundParent = false;
+                for (var j = 0; j < i; ++j) {
+                  if (comments[j].ID == comments[i].Parent) {
+                    comments[j].Children.push(comments[i]);
+                    foundParent = true;
+                    break;
+                  }
+                }
+                if (!foundParent) {
+                  toplevel.push(comments[i]);
+                }
+              }
+              // let comments = [
+              //   {Content: 'top',
+              //    Children: [
+              //      {Content: 'child 1', Children: []},
+              //      {Content: 'child 2', Children: []}]},
+              //   {Content: 'bottom', Children: []}
+              // ];
+              res.send(templates.post({post: post, owner: owner, comments: comments}));
+            }
+          });
+        }
       });
     }
   });

@@ -1,4 +1,32 @@
+label {
+  white-space: pre;
+}
 
-h2 {
-  font-family: 'Book Antiqua';
+h1, h2, h3, h4, h5 {
+  font-family: 'Century Gothic';
+  font-weight: normal;
+}
+
+p, a {
+  font-family: 'Helvetica';
+}
+
+a {
+  text-decoration: none;
+}
+
+@font-face {
+  font-family: 'Garamond';
+  src: url('/fonts/Garamond.ttf');
+}
+
+@font-face {
+  font-family: 'Teletype';
+  src: url('/fonts/Teletype.ttf');
+}
+
+
+@font-face {
+  font-family: 'Century Gothic';
+  src: url('/fonts/CenturyGothic.ttf');
 }

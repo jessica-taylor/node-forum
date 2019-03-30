@@ -58,7 +58,7 @@ function prepareStatements(db) {
   let stmts = {
     createUser: "insert into User (Name, Description, CreationTime, Email, PasswordHash, EmailConfirmed) values (?, ?, ?, ?, ?, ?)",
     createPost: "insert into Post (Owner, Title, Content, CreationTime) values (?, ?, ?, ?)",
-    createComment: "insert into Comment (Owner, Parent, Content, CreationTime) values (?, ?, ?, ?)",
+    createComment: "insert into Comment (Owner, Post, Parent, Content, CreationTime) values (?, ?, ?, ?, ?)",
     lastID: "select last_insert_rowid()",
     lookupUser: "select * from User where ID = ?",
     lookupUserByEmail: "select * from User where Email = ?",
@@ -76,7 +76,7 @@ function prepareStatements(db) {
     latestCommentsBefore: "select ID, Content from Comment where CreationTime < ? order by CreationTime desc",
     latestPostsByUserBefore: "select ID, Title from Post where CreationTime < ? and Owner = ? order by CreationTime desc",
     latestCommentsByUserBefore: "select ID, Content from Comment where CreationTime < ? and Owner = ? order by CreationTime desc",
-    commentsByParent: "select ID from Comment where Parent = ?",
+    commentsByPost: "select ID from Comment where Post = ? order by CreationTime asc",
     allUsers: "select ID, Name from User"
   };
   let prepared = {};
@@ -129,6 +129,20 @@ function createPost(db, fields, cb) {
   });
 }
 
+function createComment(db, fields, cb) {
+  db.serialize(() => {
+    db.statements.createComment.run(fields.owner, fields.post, fields.parent, fields.content, Date.now(), err => {
+      if (err) {
+        cb(err, null);
+      } else {
+        db.statements.lastID.get((err, id) => {
+          cb(err, id['last_insert_rowid()']);
+        });
+      }
+    });
+  });
+}
+
 
 function lookupPost(db, id, cb) {
   db.statements.lookupPost.get(id, (err, row) => {
@@ -155,6 +169,7 @@ module.exports = {
   hashPassword: hashPassword,
   createUser: createUser,
   createPost: createPost,
+  createComment: createComment,
   lookupPost: lookupPost,
   latestPostsBefore: latestPostsBefore
 }
