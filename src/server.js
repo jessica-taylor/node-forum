@@ -230,36 +230,47 @@ app.get('/allusers', (req, res) => {
 
 app.get('/post/:postId', (req, res) => {
   let id = req.params.postId;
-  data.lookupPost(db, id, (err, post) => {
+  findLoginUser(req, function(err, loggedInUser) {
     if (err) {
       internalError(res, err);
-    } else if (post == undefined) {
-      res.send('post not found');
     } else {
-      db.statements.lookupUser.get(post.Owner, function(err, owner)  {
+      data.lookupPost(db, id, (err, post) => {
         if (err) {
           internalError(res, err);
+        } else if (post == undefined) {
+          res.send('post not found');
         } else {
-          db.statements.commentsByPost.all(post.ID, function(err, comments) {
+          db.statements.lookupUser.get(post.Owner, function(err, owner)  {
             if (err) {
               internalError(res, err);
             } else {
-              let toplevel = [];
-              for (var i = 0; i < comments.length; ++i) {
-                comments[i].Children = [];
-                var foundParent = false;
-                for (var j = 0; j < i; ++j) {
-                  if (comments[j].ID == comments[i].Parent) {
-                    comments[j].Children.push(comments[i]);
-                    foundParent = true;
-                    break;
+              db.statements.commentsByPost.all(post.ID, function(err, comments) {
+                if (err) {
+                  internalError(res, err);
+                } else {
+                  let toplevel = [];
+                  for (var i = 0; i < comments.length; ++i) {
+                    comments[i].Children = [];
+                    var foundParent = false;
+                    for (var j = 0; j < i; ++j) {
+                      if (comments[j].ID == comments[i].Parent) {
+                        comments[j].Children.push(comments[i]);
+                        foundParent = true;
+                        break;
+                      }
+                    }
+                    if (!foundParent) {
+                      toplevel.push(comments[i]);
+                    }
                   }
+                  res.send(templates.post({
+                    post: post,
+                    owner: owner,
+                    user: loggedInUser,
+                    comments: toplevel
+                  }));
                 }
-                if (!foundParent) {
-                  toplevel.push(comments[i]);
-                }
-              }
-              res.send(templates.post({post: post, owner: owner, comments: toplevel}));
+              });
             }
           });
         }

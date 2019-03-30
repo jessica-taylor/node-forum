@@ -7,14 +7,17 @@ block head
         .append($('<textarea>').attr('name', 'content').attr('rows', '6').attr('cols', '50'))
         .append($('<input>').attr('type', 'hidden').attr('name', 'post').attr('value', #{post.ID}))
         .append($('<br>'))
-        .append($('<input>').attr('type', 'submit').attr('value', 'Reply'));
+        .append($('<input>').attr('type', 'submit').attr('value', 'Reply'))
+        .append($('<span>').text(' (as ' + $('#user_name').text() + ')'));
       if (parentId != null) {
         form.append($('<input>').attr('type', 'hidden').attr('name', 'parent').attr('value', parentId));
       }
       return form;
     }
     $(function() {
-      $('#main_reply').append(getReplyBox(null));
+      if (#{user != null}) {
+        $('#main_reply').append(getReplyBox(null));
+      }
     });
 
 mixin showComments(coms)
@@ -26,6 +29,7 @@ mixin showComments(coms)
           +showComments(com.Children)
 
 block body
+  div#user_name.invisible= user.Name
   h1= post.Title
   if owner
     p by

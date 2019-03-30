@@ -1,3 +1,7 @@
+.invisible {
+  display: hidden;
+}
+
 label {
   white-space: pre;
 }
