@@ -85,7 +85,6 @@ app.post('/login', (req, res) => {
     } else if (user == null) {
       res.send('user with that email not found');
     } else if (!data.hashPassword(fields.password).equals(user.PasswordHash)) {
-      console.log('passhash: ', user.PasswordHash, data.hashPassword(fields.password));
       res.send('wrong password');
     } else {
       doLogin(res, user, function(err) {
@@ -153,7 +152,6 @@ app.post('/newuser', (req, res) => {
   if (fields.name.length < 1) {
     errs.push("Name must not be empty");
   }
-  console.log('got here');
   db.statements.lookupUserByEmail.get(fields.email, function(err, existing) {
     if (err) {
       internalError(res, err);
@@ -194,7 +192,6 @@ app.post('/newcomment', (req, res) => {
       res.send('user not found');
     } else {
       let fields = _.clone(req.body);
-      console.log('fields', fields);
       fields.owner = user.ID;
       data.createComment(db, fields, (err, id) => {
         if (err) {
@@ -262,14 +259,7 @@ app.get('/post/:postId', (req, res) => {
                   toplevel.push(comments[i]);
                 }
               }
-              // let comments = [
-              //   {Content: 'top',
-              //    Children: [
-              //      {Content: 'child 1', Children: []},
-              //      {Content: 'child 2', Children: []}]},
-              //   {Content: 'bottom', Children: []}
-              // ];
-              res.send(templates.post({post: post, owner: owner, comments: comments}));
+              res.send(templates.post({post: post, owner: owner, comments: toplevel}));
             }
           });
         }

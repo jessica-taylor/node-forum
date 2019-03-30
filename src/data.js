@@ -76,7 +76,7 @@ function prepareStatements(db) {
     latestCommentsBefore: "select ID, Content from Comment where CreationTime < ? order by CreationTime desc",
     latestPostsByUserBefore: "select ID, Title from Post where CreationTime < ? and Owner = ? order by CreationTime desc",
     latestCommentsByUserBefore: "select ID, Content from Comment where CreationTime < ? and Owner = ? order by CreationTime desc",
-    commentsByPost: "select ID from Comment where Post = ? order by CreationTime asc",
+    commentsByPost: "select * from Comment where Post = ? order by CreationTime asc",
     allUsers: "select ID, Name from User"
   };
   let prepared = {};
@@ -108,7 +108,7 @@ function createUser(db, fields, cb) {
         cb(err, null);
       } else {
         db.statements.lastID.get((err, id) => {
-          cb(err, id['last_insert_rowid()']);
+          cb(err, id && id['last_insert_rowid()']);
         });
       }
     });
@@ -122,7 +122,7 @@ function createPost(db, fields, cb) {
         cb(err, null);
       } else {
         db.statements.lastID.get((err, id) => {
-          cb(err, id['last_insert_rowid()']);
+          cb(err, id && id['last_insert_rowid()']);
         });
       }
     });
@@ -136,7 +136,7 @@ function createComment(db, fields, cb) {
         cb(err, null);
       } else {
         db.statements.lastID.get((err, id) => {
-          cb(err, id['last_insert_rowid()']);
+          cb(err, id && id['last_insert_rowid()']);
         });
       }
     });
