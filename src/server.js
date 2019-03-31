@@ -252,6 +252,47 @@ app.post('/newcomment', (req, res) => {
   });
 });
 
+app.get('/editcomment/:commentId', (req, res) => {
+  let id = req.params.commentId;
+  data.lookupComment(db, id, (err, comment) => {
+    if (err) {
+      internalError(res, err);
+    } else if (comment == null) {
+      res.send('comment not found');
+    } else {
+      res.send(templates.editcomment({comment: comment}));
+    }
+  });
+});
+
+app.post('/editcomment/:commentId', (req, res) => {
+  let id = req.params.commentId;
+  findLoginUser(req, function(err, user) {
+    if (err) {
+      internalError(res, err);
+    } else {
+      data.lookupComment(db, id, (err, comment) => {
+        if (err) {
+          internalError(res, err);
+        } else if (comment == null) {
+          res.send('comment not found');
+        } else if (comment.Owner != user.ID) {
+          res.send("you don't own that comment");
+        } else {
+          let fields = _.clone(req.body);
+          db.statements.updateComment.run(fields.content, id, err => {
+            if (err) {
+              internalError(res, err);
+            } else {
+              res.redirect('/post/' + comment.Post);
+            }
+          });
+        }
+      });
+    }
+  });
+});
+
 app.get('/user/:userId', (req, res) => {
   let id = req.params.userId;
   db.statements.lookupUser.get(id, (err, user) => {

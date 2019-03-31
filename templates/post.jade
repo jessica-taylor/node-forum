@@ -37,6 +37,9 @@ mixin showComments(coms, toplevel)
         p= com.Content
         if user != null
           a.reply_button(href = 'javascript:void(0);') Reply
+        if user != null && user.ID == com.Owner
+          =' '
+          a(href = '/editcomment/' + com.ID) Edit
         +showComments(com.Children, false)
 
 block body

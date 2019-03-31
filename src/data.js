@@ -63,11 +63,11 @@ function prepareStatements(db) {
     lookupUserByEmail: "select * from User where Email = ?",
     lookupUserByName: "select * from User where Name = ?",
     lookupPost: "select * from Post where ID = ?",
-    lookupComment: "select * from Comment where ID = ?",
+    lookupComment: "select Comment.*, User.Name from Comment inner join User on Comment.Owner = User.ID where Comment.ID = ?",
     updateUser: "update User set Name = ?, Description = ? where ID = ?",
     setLoginToken: "update User set LoginToken = ?, LoginTokenTime = ? where ID = ?",
     updatePost: "update Post set Title = ?, Content = ? where ID = ?",
-    updateComment: "update Comment set Parent = ?, Content = ? where ID = ?",
+    updateComment: "update Comment set Content = ? where ID = ?",
     deleteUser: "delete from User where ID = ?",
     deletePost: "delete from Post where ID = ?",
     deleteComment: "delete from Comment where ID = ?",
@@ -154,6 +154,16 @@ function lookupPost(db, id, cb) {
   });
 }
 
+function lookupComment(db, id, cb) {
+  db.statements.lookupComment.get(id, (err, row) => {
+    if (err) {
+      cb(err);
+    } else {
+      cb(null, row);
+    }
+  });
+}
+
 function latestPostsBefore(db, time, cb) {
   db.statements.latestPostsBefore.all(time, (err, rows) => {
     if (err) {
@@ -171,5 +181,6 @@ module.exports = {
   createPost: createPost,
   createComment: createComment,
   lookupPost: lookupPost,
+  lookupComment: lookupComment,
   latestPostsBefore: latestPostsBefore
 }
