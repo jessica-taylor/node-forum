@@ -191,6 +191,9 @@ app.post('/newuser', (req, res) => {
   if (fields.password.length < 10) {
     errs.push("Password must be at least 10 characters");
   }
+  if (!/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(fields.email)) {
+    errs.push("Invalid email address");
+  }
   if (fields.name.length < 1) {
     errs.push("Name must not be empty");
   }
@@ -385,7 +388,6 @@ app.listen(4000, () => console.log('Express server running'));
 // TODO:
 //   - markdown
 //   - comment permalink
-//   - email validation
 //   - reset password
 //   - change password
 //   - change description
