@@ -2,8 +2,22 @@
   display: none;
 }
 
-.comments, .comment_reply_box {
+.comments:not(.toplevel) {
   margin-left: 2em;
+}
+
+.comment_reply_box {
+  margin-left: 2.5em;
+}
+
+#main_reply {
+  margin-left: 0.5em;
+}
+
+.comment {
+  padding: 0.5em;
+  margin: 0.5em;
+  border: 1px solid black;
 }
 
 label {

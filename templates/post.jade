@@ -28,8 +28,8 @@ block head
       });
     });
 
-mixin showComments(coms)
-  .comments
+mixin showComments(coms, toplevel)
+  div(class = 'comments' + (toplevel ? ' toplevel' : ''))
     each com in coms
       div.comment(id = 'comment' + com.ID, cid = com.ID)
         p
@@ -37,7 +37,7 @@ mixin showComments(coms)
         p= com.Content
         if user != null
           a.reply_button(href = 'javascript:void(0);') Reply
-        +showComments(com.Children)
+        +showComments(com.Children, false)
 
 block body
   div#user_name.invisible= user.Name
@@ -49,5 +49,5 @@ block body
   else
     p (post owner not found!)
   p= post.Content
-  +showComments(comments)
+  +showComments(comments, true)
   #main_reply
