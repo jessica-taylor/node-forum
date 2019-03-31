@@ -194,6 +194,18 @@ app.post('/newuser', (req, res) => {
   if (fields.name.length < 1) {
     errs.push("Name must not be empty");
   }
+  for (var i = 0; i < fields.name.length; ++i) {
+    if (fields.name.charCodeAt(i) < 128 && !/[-a-zA-Z0-9_ ]/.test(fields.name[i])) {
+      errs.push("Name must consist of alphanumeric characters, -, _, or space.");
+      break;
+    }
+  }
+  for (var i = 0; i < fields.name.length - 1; ++i) {
+    if (fields.name[i] == ' ' && fields.name[i+1] == ' ') {
+      errs.push("Name must not have two spaces in a row.");
+      break;
+    }
+  }
   db.statements.lookupUserByEmail.get(fields.email, function(err, existing) {
     if (err) {
       internalError(res, err);
@@ -371,11 +383,9 @@ app.get('/post/:postId', (req, res) => {
 app.listen(4000, () => console.log('Express server running'));
 
 // TODO:
-//   - edit comment
 //   - markdown
 //   - comment permalink
 //   - name validation
-//   - password validation
 //   - email validation
 //   - reset password
 //   - change password
