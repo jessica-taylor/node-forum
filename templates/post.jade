@@ -18,14 +18,25 @@ block head
       if (#{user != null}) {
         $('#main_reply').append(getReplyBox(null));
       }
+      $('.comment').each(function(i, comment) {
+        let replyButton = $(comment).children('.reply_button');
+        replyButton.click(function() {
+          replyButton.hide();
+          $(comment).append(getReplyBox($(comment).attr('cid')));
+        });
+      });
     });
 
 mixin showComments(coms)
   ul
     each com in coms
       li
-        div.comment(id = 'comment' + com.ID)
+        div.comment(id = 'comment' + com.ID, cid = com.ID)
+          p
+            a(href = '/user/' + com.Owner)= com.Name
           p= com.Content
+          if user != null
+            a.reply_button(href = '#') Reply
           +showComments(com.Children)
 
 block body

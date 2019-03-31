@@ -1,4 +1,3 @@
-
 var crypto = require('crypto');
 var sqlite = require('sqlite3').verbose();
 var util = require('util');
@@ -76,7 +75,7 @@ function prepareStatements(db) {
     latestCommentsBefore: "select ID, Content from Comment where CreationTime < ? order by CreationTime desc",
     latestPostsByUserBefore: "select ID, Title from Post where CreationTime < ? and Owner = ? order by CreationTime desc",
     latestCommentsByUserBefore: "select ID, Content from Comment where CreationTime < ? and Owner = ? order by CreationTime desc",
-    commentsByPost: "select * from Comment where Post = ? order by CreationTime asc",
+    commentsByPost: "select Comment.*, User.Name from Comment inner join User on Comment.Owner = User.Id where Post = ? order by CreationTime asc",
     allUsers: "select ID, Name from User"
   };
   let prepared = {};
@@ -91,13 +90,14 @@ function makeIndices(db) {
     [ "IxUserId on User (ID)"
     , "IxPostId on Post (ID)"
     , "IxCommentId on Comment (ID)"
-    , "IxCommentParent on Comment (Parent)"
     , "IxUserCreationTime on User (CreationTime)"
     , "IxPostCreationTime on Post (CreationTime)"
     , "IxCommentCreationTime on Comment (CreationTime)"
     ];
   ixs.forEach(ix => {
-    db.run('create unique index if not exists ' + ix);
+    db.serialize(() => {
+      db.run('create unique index if not exists ' + ix);
+    });
   });
 }
 
