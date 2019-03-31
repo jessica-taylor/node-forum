@@ -1,6 +1,7 @@
 extends ./page.jade
 
 block head
+  script(type = "text/javascript", async, src = "/MathJax/MathJax.js?config=TeX-MML-AM_CHTML")
   script(type = "text/javascript").
     function getReplyBox(parentId) {
       let form = $('<form>').attr('action', '/newcomment').attr('method', 'post')
