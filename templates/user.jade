@@ -1,7 +1,7 @@
 extends ./page.jade
 
 block head
-  script(type = "text/javascript", async, src = "/MathJax/MathJax.js?config=TeX-MML-AM_CHTML")
+  +mathjax
 
 block body
   h1= user.Name
