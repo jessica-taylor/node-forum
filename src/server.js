@@ -175,7 +175,13 @@ app.post('/newuser', (req, res) => {
               if (err) {
                 internalError(res, err);
               } else {
-                res.send(templates.newuser2({uid: uid}));
+                doLogin(res, {ID: uid}, function(err) {
+                  if (err) {
+                    internalError(res, err);
+                  } else {
+                    res.send(templates.newuser2({uid: uid}));
+                  }
+                });
               }
             });
           }

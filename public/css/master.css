@@ -2,6 +2,10 @@
   display: none;
 }
 
+.writer_name {
+  font-size: 0.5em;
+}
+
 .comments:not(.toplevel) {
   margin-left: 1.5em;
 }
