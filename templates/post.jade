@@ -10,6 +10,7 @@ block head
         .append($('<input>').attr('type', 'submit').attr('value', 'Reply'))
         .append($('<span>').text(' (as ' + $('#user_name').text() + ')'));
       if (parentId != null) {
+        form.addClass('comment_reply_box');
         form.append($('<input>').attr('type', 'hidden').attr('name', 'parent').attr('value', parentId));
       }
       return form;
@@ -21,23 +22,22 @@ block head
       $('.comment').each(function(i, comment) {
         let replyButton = $(comment).children('.reply_button');
         replyButton.click(function() {
+          replyButton.after(getReplyBox($(comment).attr('cid')));
           replyButton.hide();
-          $(comment).append(getReplyBox($(comment).attr('cid')));
         });
       });
     });
 
 mixin showComments(coms)
-  ul
+  .comments
     each com in coms
-      li
-        div.comment(id = 'comment' + com.ID, cid = com.ID)
-          p
-            a(href = '/user/' + com.Owner)= com.Name
-          p= com.Content
-          if user != null
-            a.reply_button(href = '#') Reply
-          +showComments(com.Children)
+      div.comment(id = 'comment' + com.ID, cid = com.ID)
+        p
+          a(href = '/user/' + com.Owner)= com.Name
+        p= com.Content
+        if user != null
+          a.reply_button(href = 'javascript:void(0);') Reply
+        +showComments(com.Children)
 
 block body
   div#user_name.invisible= user.Name

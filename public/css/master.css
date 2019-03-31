@@ -2,6 +2,10 @@
   display: none;
 }
 
+.comments, .comment_reply_box {
+  margin-left: 2em;
+}
+
 label {
   white-space: pre;
 }
