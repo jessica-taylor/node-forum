@@ -79,11 +79,12 @@ app.get('/login', (req, res) => {
 
 app.post('/login', (req, res) => {
   let fields = _.clone(req.body);
-  db.statements.lookupUserByEmail.get(fields.email, function(err, user) {
+  fields.name = fields.name.trim();
+  db.statements.lookupUserByName.get(fields.name, function(err, user) {
     if (err) {
       internalError(res, err);
     } else if (user == null) {
-      res.send('user with that email not found');
+      res.send('user with that name not found');
     } else if (!data.hashPassword(fields.password).equals(user.PasswordHash)) {
       res.send('wrong password');
     } else {

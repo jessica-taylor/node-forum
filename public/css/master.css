@@ -3,11 +3,11 @@
 }
 
 .comments:not(.toplevel) {
-  margin-left: 2em;
+  margin-left: 1.5em;
 }
 
 .comment_reply_box {
-  margin-left: 2.5em;
+  margin-left: 2em;
 }
 
 #main_reply {
