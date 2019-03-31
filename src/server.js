@@ -5,6 +5,7 @@ var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var _ = require('underscore');
 var uuidv5 = require('uuid/v5');
+var markdown = require('markdown').markdown;
 
 var data = require('./data');
 
@@ -316,7 +317,7 @@ app.get('/user/:userId', (req, res) => {
     } else if (user == undefined) {
       res.send('user not found');
     } else {
-      res.send(templates.user({user: user}));
+      res.send(templates.user({user: user, markdown: markdown}));
     }
   });
 });
@@ -371,7 +372,8 @@ app.get('/post/:postId', (req, res) => {
                     post: post,
                     owner: owner,
                     user: loggedInUser,
-                    comments: toplevel
+                    comments: toplevel,
+                    markdown: markdown
                   }));
                 }
               });
@@ -386,7 +388,6 @@ app.get('/post/:postId', (req, res) => {
 app.listen(4000, () => console.log('Express server running'));
 
 // TODO:
-//   - markdown
 //   - comment permalink
 //   - reset password
 //   - change password

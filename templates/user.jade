@@ -2,5 +2,5 @@ extends ./page.jade
 
 block body
   h1= user.Name
-  p= user.Description
+  div !{markdown.toHTML(user.Description)}
   a(href = '/') Home

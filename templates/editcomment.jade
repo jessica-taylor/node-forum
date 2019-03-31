@@ -1,0 +1,10 @@
+extends ./page.jade
+
+block body
+  h1 Edit comment
+  form(action="/editcomment/" + comment.ID, method="post")
+    textarea(name="content", rows="6", cols="50")= comment.Content
+    br
+    input(type="submit", value="Edit comment")
+    =' '
+    span (as #{comment.Name})

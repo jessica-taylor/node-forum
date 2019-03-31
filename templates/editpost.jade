@@ -1,0 +1,11 @@
+extends ./page.jade
+
+block body
+  h1 Edit post
+  form(action="/editpost/" + post.ID, method="post")
+    p Title: 
+      input(type="text", name="title", value=post.Title)
+    p Content:
+    textarea(name="content", rows="50", cols="80")= post.Content
+    br
+    input(type="submit", value="Edit post")
