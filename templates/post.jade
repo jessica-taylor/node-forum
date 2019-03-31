@@ -49,6 +49,8 @@ block body
   else
     p (post owner not found!)
   p= post.Content
+  if user != null && user.ID == post.Owner
+    a(href='/editpost/' + post.ID) Edit
   +showComments(comments, true)
   #main_reply
   a(href = '/') Home

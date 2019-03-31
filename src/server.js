@@ -135,6 +135,47 @@ app.post('/newpost', (req, res) => {
   });
 });
 
+app.get('/editpost/:postId', (req, res) => {
+  let id = req.params.postId;
+  data.lookupPost(db, id, (err, post) => {
+    if (err) {
+      internalError(res, err);
+    } else if (post == null) {
+      res.send('post not found');
+    } else {
+      res.send(templates.editpost({post: post}));
+    }
+  });
+});
+
+app.post('/editpost/:postId', (req, res) => {
+  let id = req.params.postId;
+  findLoginUser(req, function(err, user) {
+    if (err) {
+      internalError(res, err);
+    } else {
+      data.lookupPost(db, id, (err, post) => {
+        if (err) {
+          internalError(res, err);
+        } else if (post == null) {
+          res.send('post not found');
+        } else if (post.Owner != user.ID) {
+          res.send("you don't own that post");
+        } else {
+          let fields = _.clone(req.body);
+          db.statements.updatePost.run(fields.title, fields.content, id, err => {
+            if (err) {
+              internalError(res, err);
+            } else {
+              res.redirect('/post/' + id);
+            }
+          });
+        }
+      });
+    }
+  });
+});
+
 app.get('/newuser', (req, res) => {
   res.send(templates.newuser({errors: []}));
 });
@@ -287,3 +328,16 @@ app.get('/post/:postId', (req, res) => {
 });
 
 app.listen(4000, () => console.log('Express server running'));
+
+// TODO:
+//   - edit comment
+//   - markdown
+//   - comment permalink
+//   - name validation
+//   - password validation
+//   - email validation
+//   - reset password
+//   - change password
+//   - change description
+//   - change name
+//   - big frontpage
