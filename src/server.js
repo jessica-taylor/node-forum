@@ -385,7 +385,6 @@ app.listen(4000, () => console.log('Express server running'));
 // TODO:
 //   - markdown
 //   - comment permalink
-//   - name validation
 //   - email validation
 //   - reset password
 //   - change password
