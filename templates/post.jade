@@ -32,8 +32,8 @@ mixin showComments(coms, toplevel)
   div(class = 'comments' + (toplevel ? ' toplevel' : ''))
     each com in coms
       div.comment(id = 'comment' + com.ID, cid = com.ID)
-        p
-          a(href = '/user/' + com.Owner)= com.Name
+        a(href = '/user/' + com.Owner)= com.Name
+        br
         p= com.Content
         if user != null
           a.reply_button(href = 'javascript:void(0);') Reply
