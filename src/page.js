@@ -20,8 +20,12 @@ module.exports = function(db, templates, app) {
     }
   }
 
+  function getUUID() {
+    return uuidv5('jessic.at', uuidv5.DNS);
+  }
+
   function doLogin(res, user, cont) {
-    let token = uuidv5('jessic.at', uuidv5.DNS);
+    let token = getUUID();
     db.statements.setLoginToken.run(token, Date.now(), user.ID, function(err) {
       if (err) {
         cont(err); return;
@@ -32,6 +36,7 @@ module.exports = function(db, templates, app) {
     });
   }
   return {
+    getUUID: getUUID,
     findLoginUser: findLoginUser,
     doLogin: doLogin
   };

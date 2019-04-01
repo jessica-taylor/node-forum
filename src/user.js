@@ -42,22 +42,14 @@ module.exports = function(db, templates, app) {
         break;
       }
     }
-    db.statements.lookupUserByEmail.get(fields.email, function(err, existing) {
+    db.statements.lookupUserByName.get(fields.name, function(err, existing) {
       if (err) {
         callback(err); return;
       }
       if (existing != null && existing.ID != prevUser.ID) {
-        errs.push("Email already taken");
+        errs.push("Name already taken");
       }
-      db.statements.lookupUserByName.get(fields.name, function(err, existing2) {
-        if (err) {
-          callback(err); return;
-        }
-        if (existing2 != null && existing.ID != prevUser.ID) {
-          errs.push("Name already taken");
-        }
-        callback(null, errs, fields);
-      });
+      callback(null, errs, fields);
     });
   }
 
@@ -202,6 +194,30 @@ module.exports = function(db, templates, app) {
           common.internalError(err); return;
         }
         res.send(templates.allusers({users: users}));
+      });
+    });
+
+    app.get('/forgotpassword', (req, res) => {
+      res.send(templates.forgotpassword({errors: []}));
+    });
+
+    app.post('/forgotpassword', (req, res) => {
+      let fields = _.clone(req.body);
+      db.statements.lookupUserByName.get(fields.name, (err, user) => {
+        if (err) {
+          common.internalError(err);
+        } else if (user == null) {
+          res.send(templates.forgotpassword({errors: ['User with name ' + fields.name + ' not found']}));
+        } else {
+          let token = pageMod.getUUID();
+          db.statements.setResetPasswordToken.run(token, Date.now(), user.ID, err => {
+            if (err) {
+              common.internalError(err); return;
+            }
+            console.log('token is', token);
+            res.send(templates.forgotpassword2({}));
+          });
+        }
       });
     });
   }
