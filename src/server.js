@@ -53,7 +53,4 @@ app.listen(4000, () => console.log('Express server running'));
 // TODO:
 //   - comment permalink
 //   - reset password
-//   - change password
-//   - change description
-//   - change name
 //   - big frontpage

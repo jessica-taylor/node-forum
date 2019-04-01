@@ -66,7 +66,7 @@ function prepareStatements(db) {
     lookupUserByName: "select * from User where Name = ?",
     lookupPost: "select * from Post where ID = ?",
     lookupComment: "select Comment.*, User.Name from Comment inner join User on Comment.Owner = User.ID where Comment.ID = ?",
-    updateUser: "update User set Name = ?, Email = ?, Description = ? where ID = ?",
+    updateUser: "update User set Name = ?, Description = ?, Email = ?, PasswordHash = ? where ID = ?",
     setLoginToken: "update User set LoginToken = ?, LoginTokenTime = ? where ID = ?",
     updatePost: "update Post set Title = ?, Content = ? where ID = ?",
     updateComment: "update Comment set Content = ? where ID = ?",
@@ -116,6 +116,10 @@ function createUser(db, fields, cb) {
     });
   });
 }
+
+function updateUser(db, id, fields, cb) {
+  db.statements.updateUser.run(fields.name, fields.description, fields.email, fields.passwordHash, id, cb);
+};
 
 function createPost(db, fields, cb) {
   db.serialize(() => {
@@ -180,6 +184,7 @@ module.exports = {
   getDatabase: getDatabase,
   hashPassword: hashPassword,
   createUser: createUser,
+  updateUser: updateUser,
   createPost: createPost,
   createComment: createComment,
   lookupPost: lookupPost,

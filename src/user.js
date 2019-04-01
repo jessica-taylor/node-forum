@@ -11,7 +11,12 @@ module.exports = function(db, templates, app) {
     fields.name = fields.name.trim();
     fields.email = fields.email.trim();
     let errs = [];
-    if (existingUser == null || fields.password != '' || fields.password2 != '') {
+    if (prevUser == null) {
+      fields.description = 'No description yet';
+    } else {
+      fields.description = fields.description.trim();
+    }
+    if (prevUser == null || fields.password != '' || fields.password2 != '') {
       if (fields.password != fields.password2) {
         errs.push("Passwords don't match");
       }
@@ -41,14 +46,14 @@ module.exports = function(db, templates, app) {
       if (err) {
         callback(err); return;
       }
-      if (existing != null && existing.ID != prev.ID) {
+      if (existing != null && existing.ID != prevUser.ID) {
         errs.push("Email already taken");
       }
       db.statements.lookupUserByName.get(fields.name, function(err, existing2) {
         if (err) {
           callback(err); return;
         }
-        if (existing2 != null && existing.ID != prev.ID) {
+        if (existing2 != null && existing.ID != prevUser.ID) {
           errs.push("Name already taken");
         }
         callback(null, errs, fields);
@@ -130,7 +135,10 @@ module.exports = function(db, templates, app) {
         if (err) {
           common.internalError(res, err); return;
         }
-        res.send(templates.edituser({user: user}));
+        if (user == null) {
+          res.send('not logged in'); return;
+        }
+        res.send(templates.edituser({user: user, errors: []}));
       });
     });
 
@@ -139,7 +147,28 @@ module.exports = function(db, templates, app) {
         if (err) {
           common.internalError(res, err); return;
         }
-        res.send(templates.edituser({user: user}));
+        validate(user, _.clone(req.body), function(err, errs, fields) {
+          if (errs.length > 0) {
+            res.send(templates.edituser({errors: errs}));
+          } else {
+            if (fields.password == '' || fields.password == null) {
+              fields.passwordHash = user.PasswordHash;
+            } else {
+              fields.passwordHash = data.hashPassword(fields.password);
+            }
+            data.updateUser(db, user.ID, fields, function(err) {
+              if (err) {
+                common.internalError(res, err); return;
+              }
+              pageMod.doLogin(res, {ID: user.ID}, function(err) {
+                if (err) {
+                  common.internalError(res, err); return;
+                }
+                res.redirect('/user/' + user.ID);
+              });
+            });
+          }
+        });
       });
     });
 
