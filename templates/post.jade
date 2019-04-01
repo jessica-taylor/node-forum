@@ -35,7 +35,7 @@ mixin showComments(coms, toplevel)
       div.comment(id = 'comment' + com.ID, cid = com.ID)
         a(href = '/user/' + com.Owner)= com.Name
         br
-        div !{markdown.toHTML(com.Content)}
+        div !{com.Content}
         if user != null
           a.reply_button(href = 'javascript:void(0);') Reply
         if user != null && user.ID == com.Owner
@@ -52,7 +52,7 @@ block body
       a(href='/user/' + owner.ID)= owner.Name
   else
     p (post owner not found!)
-  div !{markdown.toHTML(post.Content)}
+  div !{post.Content}
   if user != null && user.ID == post.Owner
     a(href='/editpost/' + post.ID) Edit
   +showComments(comments, true)

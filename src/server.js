@@ -5,17 +5,48 @@ var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var _ = require('underscore');
 var uuidv5 = require('uuid/v5');
-var markdown = require('markdown').markdown;
+var pandoc = require('node-pandoc');
 
 var data = require('./data');
 
-let templates = {};
+
+function asyncMap(xs, f, callback) {
+  if (xs.length == 0) {
+    callback(null, []);
+    return;
+  }
+  var returned = false;
+  var results = [];
+  var nResults = 0;
+  xs.forEach((x, i) => {
+    results.push(null);
+    f(x, (err, res) => {
+      if (returned) return;
+      if (err) {
+        returned = true;
+        callback(err);
+      } else if (results[i] == null) {
+        results[i] = [res];
+        nResults += 1;
+        if (nResults == xs.length) {
+          returned = true;
+          callback(null, results.map(r => r[0]));
+        }
+      }
+    });
+  });
+}
+
+function mdTexToHTML(mdtex, callback) {
+  pandoc(mdtex, '-f markdown -t html --mathjax', callback);
+}
 
 function internalError(res, err) {
   res.status(500);
   res.send('internal error: ' + err);
 }
 
+let templates = {};
 
 fs.readdirSync('templates').forEach(fileName => {
   templates[fileName.replace('.jade', '')] =
@@ -317,7 +348,14 @@ app.get('/user/:userId', (req, res) => {
     } else if (user == undefined) {
       res.send('user not found');
     } else {
-      res.send(templates.user({user: user, markdown: markdown}));
+      mdTexToHTML(user.Description, (err, desc) => {
+        if (err) {
+          internalError(res, err); return;
+        }
+        user.Description = desc;
+        res.send(templates.user({user: user}));
+      })
+
     }
   });
 });
@@ -353,28 +391,44 @@ app.get('/post/:postId', (req, res) => {
                 if (err) {
                   internalError(res, err);
                 } else {
-                  let toplevel = [];
-                  for (var i = 0; i < comments.length; ++i) {
-                    comments[i].Children = [];
-                    var foundParent = false;
-                    for (var j = 0; j < i; ++j) {
-                      if (comments[j].ID == comments[i].Parent) {
-                        comments[j].Children.push(comments[i]);
-                        foundParent = true;
-                        break;
+                  let toConvertMarkdown = _.clone(comments);
+                  toConvertMarkdown.push(post);
+                  asyncMap(toConvertMarkdown, (obj, cb) => {
+                    mdTexToHTML(obj.Content, (err, res) => {
+                      if (err) {
+                        cb(err);
+                      } else {
+                        obj.Content = res;
+                        cb(null, null);
                       }
+                    });
+                  }, function(err) {
+                    if (err) {
+                      internalError(res, err);
+                    } else {
+                      let toplevel = [];
+                      for (var i = 0; i < comments.length; ++i) {
+                        comments[i].Children = [];
+                        var foundParent = false;
+                        for (var j = 0; j < i; ++j) {
+                          if (comments[j].ID == comments[i].Parent) {
+                            comments[j].Children.push(comments[i]);
+                            foundParent = true;
+                            break;
+                          }
+                        }
+                        if (!foundParent) {
+                          toplevel.push(comments[i]);
+                        }
+                      }
+                      res.send(templates.post({
+                        post: post,
+                        owner: owner,
+                        user: loggedInUser,
+                        comments: toplevel
+                      }));
                     }
-                    if (!foundParent) {
-                      toplevel.push(comments[i]);
-                    }
-                  }
-                  res.send(templates.post({
-                    post: post,
-                    owner: owner,
-                    user: loggedInUser,
-                    comments: toplevel,
-                    markdown: markdown
-                  }));
+                  });
                 }
               });
             }
@@ -388,6 +442,7 @@ app.get('/post/:postId', (req, res) => {
 app.listen(4000, () => console.log('Express server running'));
 
 // TODO:
+//   - pandoc! pandoc -f markdown foo.md -o foo.html --mathjax
 //   - comment permalink
 //   - reset password
 //   - change password

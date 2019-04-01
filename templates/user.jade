@@ -5,5 +5,5 @@ block head
 
 block body
   h1= user.Name
-  div !{markdown.toHTML(user.Description)}
+  div !{user.Description}
   a(href = '/') Home
