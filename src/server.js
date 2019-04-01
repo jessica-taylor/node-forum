@@ -12,7 +12,7 @@ var data = require('./data');
 let db = data.getDatabase();
 let templates = {};
 
-fs.readdirSync('templates').forEach(fileName => {
+fs.readdirSync(__dirname + '/../templates').forEach(fileName => {
   templates[fileName.replace('.jade', '')] =
     jade.compileFile('templates/' + fileName, {});
 });

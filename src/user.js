@@ -1,4 +1,5 @@
 var _ = require('underscore');
+var nodemailer = require('nodemailer');
 
 var common = require('./common');
 var data = require('./data');
