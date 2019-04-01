@@ -6,15 +6,18 @@ var data = require('./data');
 module.exports = function(db, templates, app) {
   var pageMod = require('./page')(db, templates, app);
 
-  function validate(fields, callback) {
+  function validate(prevUser, fields, callback) {
+    let prevID = prevUser ? prevUser.ID : null;
     fields.name = fields.name.trim();
     fields.email = fields.email.trim();
     let errs = [];
-    if (fields.password != fields.password2) {
-      errs.push("Passwords don't match");
-    }
-    if (fields.password.length < 10) {
-      errs.push("Password must be at least 10 characters");
+    if (existingUser == null || fields.password != '' || fields.password2 != '') {
+      if (fields.password != fields.password2) {
+        errs.push("Passwords don't match");
+      }
+      if (fields.password.length < 10) {
+        errs.push("Password must be at least 10 characters");
+      }
     }
     if (!/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(fields.email)) {
       errs.push("Invalid email address");
@@ -38,14 +41,14 @@ module.exports = function(db, templates, app) {
       if (err) {
         callback(err); return;
       }
-      if (existing != null) {
+      if (existing != null && existing.ID != prev.ID) {
         errs.push("Email already taken");
       }
       db.statements.lookupUserByName.get(fields.name, function(err, existing2) {
         if (err) {
           callback(err); return;
         }
-        if (existing2 != null) {
+        if (existing2 != null && existing.ID != prev.ID) {
           errs.push("Name already taken");
         }
         callback(null, errs, fields);
@@ -59,7 +62,7 @@ module.exports = function(db, templates, app) {
     });
 
     app.post('/newuser', (req, res) => {
-      validate(_.clone(req.body), function(err, errs, fields) {
+      validate(null, _.clone(req.body), function(err, errs, fields) {
         if (err) {
           common.internalError(res, err); return;
         }
