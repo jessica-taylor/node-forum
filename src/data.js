@@ -4,6 +4,12 @@ var util = require('util');
 
 var common = require('./common');
 
+let salt = '0rXKWHc3YoO3wrTUknuc';
+
+function hashPassword(pass) {
+  return crypto.createHmac('sha256', salt).update(pass).digest('buffer');
+}
+
 function getDatabase() {
   let db = new sqlite.Database('database.sqlite3');
   db.serialize(() => {
@@ -99,7 +105,7 @@ function makeIndices(db) {
 
 function createUser(db, fields, cb) {
   db.serialize(() => {
-    db.statements.createUser.run(fields.name, fields.description, Date.now(), fields.email, common.hashPassword(fields.password), true, err => {
+    db.statements.createUser.run(fields.name, fields.description, Date.now(), fields.email, hashPassword(fields.password), true, err => {
       if (err) {
         cb(err, null);
       } else {
@@ -172,6 +178,7 @@ function latestPostsBefore(db, time, cb) {
 
 module.exports = {
   getDatabase: getDatabase,
+  hashPassword: hashPassword,
   createUser: createUser,
   createPost: createPost,
   createComment: createComment,

@@ -78,7 +78,7 @@ app.post('/login', (req, res) => {
       common.internalError(res, err);
     } else if (user == null) {
       res.send('user with that name not found');
-    } else if (!common.hashPassword(fields.password).equals(user.PasswordHash)) {
+    } else if (!data.hashPassword(fields.password).equals(user.PasswordHash)) {
       res.send('wrong password');
     } else {
       doLogin(res, user, function(err) {

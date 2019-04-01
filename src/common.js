@@ -1,10 +1,5 @@
 var pandoc = require('node-pandoc');
 
-let salt = '0rXKWHc3YoO3wrTUknuc';
-
-function hashPassword(pass) {
-  return crypto.createHmac('sha256', salt).update(pass).digest('buffer');
-}
 
 function asyncMap(xs, f, callback) {
   if (xs.length == 0) {
@@ -44,7 +39,6 @@ function internalError(res, err) {
 
 
 module.exports = {
-  hashPassword: hashPassword,
   asyncMap: asyncMap,
   mdTexToHTML: mdTexToHTML,
   internalError: internalError
