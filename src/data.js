@@ -77,9 +77,9 @@ function prepareStatements(db) {
     deleteUser: "delete from User where ID = ?",
     deletePost: "delete from Post where ID = ?",
     deleteComment: "delete from Comment where ID = ?",
-    latestPostsBefore: "select Post.ID, Post.Title, Post.Owner, User.Name from Post inner join User on Post.Owner = User.Id where Post.CreationTime < ? order by Post.CreationTime desc",
-    latestCommentsBefore: "select ID, Content from Comment where CreationTime < ? order by CreationTime desc",
-    latestPostsByUserBefore: "select ID, Title from Post where CreationTime < ? and Owner = ? order by CreationTime desc",
+    latestPostsBefore: "select Post.ID, Post.Title, Post.Owner, Post.CreationTime, User.Name from Post inner join User on Post.Owner = User.Id where Post.CreationTime < ? order by Post.CreationTime desc",
+    latestCommentsBefore: "select * from Comment where CreationTime < ? order by CreationTime desc",
+    latestPostsByUserBefore: "select ID, Title, CreationTime from Post where CreationTime < ? and Owner = ? order by CreationTime desc",
     latestCommentsByUserBefore: "select ID, Content from Comment where CreationTime < ? and Owner = ? order by CreationTime desc",
     commentsByPost: "select Comment.*, User.Name from Comment inner join User on Comment.Owner = User.Id where Post = ? order by CreationTime asc",
     allUsers: "select ID, Name from User"
