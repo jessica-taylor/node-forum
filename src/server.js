@@ -52,5 +52,6 @@ app.listen(4000, () => console.log('Express server running'));
 
 // TODO:
 //   - comment permalink
-//   - reset password
+//   - email reset password link
 //   - big frontpage
+//   - user profile posts and comments
