@@ -10,6 +10,7 @@ var common = require('./common');
 var data = require('./data');
 
 
+let db = data.getDatabase();
 let templates = {};
 
 fs.readdirSync('templates').forEach(fileName => {
@@ -18,42 +19,16 @@ fs.readdirSync('templates').forEach(fileName => {
 });
 
 let app = express();
-let db = data.getDatabase();
-
-function findLoginUser(req, cont) {
-  if (req.cookies.loginToken) {
-    db.statements.lookupUser.get(req.cookies.userID, function(err, user) {
-      if (err) {
-        cont(err);
-      } else if (user == null || user.LoginToken != req.cookies.loginToken) {
-        cont(null, null);
-      } else {
-        cont(null, user);
-      }
-    });
-  } else {
-    cont(null, null);
-  }
-}
-
-function doLogin(res, user, cont) {
-  let token = uuidv5('jessic.at', uuidv5.DNS);
-  db.statements.setLoginToken.run(token, Date.now(), user.ID, function(err) {
-    if (err) {
-      cont(err); return;
-    }
-    res.cookie('userID', user.ID);
-    res.cookie('loginToken', token);
-    cont(null);
-  });
-}
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 app.use(express.static('public'));
 
+var pageMod = require('./page')(db, templates, app);
+
+
 app.get('/', (req, res) => {
-  findLoginUser(req, function(err, user) {
+  pageMod.findLoginUser(req, function(err, user) {
     if (err) {
       common.internalError(res, err); return;
     }
@@ -81,7 +56,7 @@ app.post('/login', (req, res) => {
     } else if (!data.hashPassword(fields.password).equals(user.PasswordHash)) {
       res.send('wrong password');
     } else {
-      doLogin(res, user, function(err) {
+      pageMod.doLogin(res, user, function(err) {
         if (err) {
           common.internalError(res, err);
         } else {
@@ -93,7 +68,7 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/signout', (req, res) => {
-  findLoginUser(req, function(err, user) {
+  pageMod.findLoginUser(req, function(err, user) {
     if (err) {
       common.internalError(res, err);
     } else if (user == null) {
@@ -111,7 +86,7 @@ app.get('/newpost', (req, res) => {
 });
 
 app.post('/newpost', (req, res) => {
-  findLoginUser(req, function(err, user) {
+  pageMod.findLoginUser(req, function(err, user) {
     if (err) {
       common.internalError(res, err); return;
     }
@@ -142,7 +117,7 @@ app.get('/editpost/:postId', (req, res) => {
 
 app.post('/editpost/:postId', (req, res) => {
   let id = req.params.postId;
-  findLoginUser(req, function(err, user) {
+  pageMod.findLoginUser(req, function(err, user) {
     if (err) {
       common.internalError(res, err); return;
     }
@@ -222,7 +197,7 @@ app.post('/newuser', (req, res) => {
           if (err) {
             common.internalError(res, err); return;
           }
-          doLogin(res, {ID: uid}, function(err) {
+          pageMod.doLogin(res, {ID: uid}, function(err) {
             if (err) {
               common.internalError(res, err); return;
             }
@@ -235,7 +210,7 @@ app.post('/newuser', (req, res) => {
 });
 
 app.get('/edituser', (req, res) => {
-  findLoginUser(req, function(err, user) {
+  pageMod.findLoginUser(req, function(err, user) {
     if (err) {
       common.internalError(res, err); return;
     }
@@ -244,7 +219,7 @@ app.get('/edituser', (req, res) => {
 });
 
 app.post('/newcomment', (req, res) => {
-  findLoginUser(req, function(err, user) {
+  pageMod.findLoginUser(req, function(err, user) {
     if (err) {
       common.internalError(res, err);
     } else if (user == null) {
@@ -278,7 +253,7 @@ app.get('/editcomment/:commentId', (req, res) => {
 
 app.post('/editcomment/:commentId', (req, res) => {
   let id = req.params.commentId;
-  findLoginUser(req, function(err, user) {
+  pageMod.findLoginUser(req, function(err, user) {
     if (err) {
       common.internalError(res, err); return;
     }
@@ -295,6 +270,7 @@ app.post('/editcomment/:commentId', (req, res) => {
           if (err) {
             common.internalError(res, err); return;
           }
+          res.redirect('/post/' + comment.Post);
         });
       }
     });
@@ -309,7 +285,7 @@ app.get('/user/:userId', (req, res) => {
     } else if (user == undefined) {
       res.send('user not found');
     } else {
-      findLoginUser(req, function(err, login) {
+      pageMod.findLoginUser(req, function(err, login) {
         if (err) {
           common.internalError(res, err); return;
         }
@@ -337,7 +313,7 @@ app.get('/allusers', (req, res) => {
 
 app.get('/post/:postId', (req, res) => {
   let id = req.params.postId;
-  findLoginUser(req, function(err, loggedInUser) {
+  pageMod.findLoginUser(req, function(err, loggedInUser) {
     if (err) {
       common.internalError(res, err); return;
     }
