@@ -1,6 +1,7 @@
 
 var common = require('./common');
 var data = require('./data');
+var uuidv5 = require('uuid/v5');
 
 module.exports = function(db, templates, app) {
   function findLoginUser(req, cont) {
