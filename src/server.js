@@ -76,12 +76,11 @@ function doLogin(res, user, cont) {
   let token = uuidv5('jessic.at', uuidv5.DNS);
   db.statements.setLoginToken.run(token, Date.now(), user.ID, function(err) {
     if (err) {
-      cont(err);
-    } else {
-      res.cookie('userID', user.ID);
-      res.cookie('loginToken', token);
-      cont(null);
+      cont(err); return;
     }
+    res.cookie('userID', user.ID);
+    res.cookie('loginToken', token);
+    cont(null);
   });
 }
 
@@ -92,16 +91,14 @@ app.use(express.static('public'));
 app.get('/', (req, res) => {
   findLoginUser(req, function(err, user) {
     if (err) {
-      internalError(res, err);
-    } else {
-      data.latestPostsBefore(db, 9999999999999, (err, posts) => {
-        if (err) {
-          internalError(res, err);
-        } else {
-          res.send(templates.home({posts: posts, user: user}));
-        }
-      });
+      internalError(res, err); return;
     }
+    data.latestPostsBefore(db, 9999999999999, (err, posts) => {
+      if (err) {
+        internalError(res, err); return;
+      }
+      res.send(templates.home({posts: posts, user: user}));
+    });
   });
 });
 
@@ -152,18 +149,17 @@ app.get('/newpost', (req, res) => {
 app.post('/newpost', (req, res) => {
   findLoginUser(req, function(err, user) {
     if (err) {
-      internalError(res, err);
-    } else {
-      let fields = _.clone(req.body);
-      fields.owner = user.ID;
-      data.createPost(db, fields, (err, id) => {
-        if (err) {
-          internalError(res, err);
-        } else {
-          res.redirect('/post/' + id);
-        }
-      });
+      internalError(res, err); return;
     }
+    let fields = _.clone(req.body);
+    fields.owner = user.ID;
+    data.createPost(db, fields, (err, id) => {
+      if (err) {
+        internalError(res, err);
+      } else {
+        res.redirect('/post/' + id);
+      }
+    });
   });
 });
 
@@ -184,27 +180,26 @@ app.post('/editpost/:postId', (req, res) => {
   let id = req.params.postId;
   findLoginUser(req, function(err, user) {
     if (err) {
-      internalError(res, err);
-    } else {
-      data.lookupPost(db, id, (err, post) => {
-        if (err) {
-          internalError(res, err);
-        } else if (post == null) {
-          res.send('post not found');
-        } else if (post.Owner != user.ID) {
-          res.send("you don't own that post");
-        } else {
-          let fields = _.clone(req.body);
-          db.statements.updatePost.run(fields.title, fields.content, id, err => {
-            if (err) {
-              internalError(res, err);
-            } else {
-              res.redirect('/post/' + id);
-            }
-          });
-        }
-      });
+      internalError(res, err); return;
     }
+    data.lookupPost(db, id, (err, post) => {
+      if (err) {
+        internalError(res, err);
+      } else if (post == null) {
+        res.send('post not found');
+      } else if (post.Owner != user.ID) {
+        res.send("you don't own that post");
+      } else {
+        let fields = _.clone(req.body);
+        db.statements.updatePost.run(fields.title, fields.content, id, err => {
+          if (err) {
+            internalError(res, err);
+          } else {
+            res.redirect('/post/' + id);
+          }
+        });
+      }
+    });
   });
 });
 
@@ -243,39 +238,35 @@ app.post('/newuser', (req, res) => {
   }
   db.statements.lookupUserByEmail.get(fields.email, function(err, existing) {
     if (err) {
-      internalError(res, err);
-    } else {
-      if (existing != null) {
-        errs.push("Email already taken");
-      }
-      db.statements.lookupUserByName.get(fields.name, function(err, existing2) {
-        if (err) {
-          internalError(res, err);
-        } else {
-          if (existing2 != null) {
-            errs.push("Name already taken");
-          }
-          if (errs.length > 0) {
-            res.send(templates.newuser({errors: errs}));
-          } else {
-            fields.description = 'No description yet';
-            data.createUser(db, fields, function(err, uid) {
-              if (err) {
-                internalError(res, err);
-              } else {
-                doLogin(res, {ID: uid}, function(err) {
-                  if (err) {
-                    internalError(res, err);
-                  } else {
-                    res.send(templates.newuser2({uid: uid}));
-                  }
-                });
-              }
-            });
-          }
-        }
-      });
+      internalError(res, err); return;
     }
+    if (existing != null) {
+      errs.push("Email already taken");
+    }
+    db.statements.lookupUserByName.get(fields.name, function(err, existing2) {
+      if (err) {
+        internalError(res, err); return;
+      }
+      if (existing2 != null) {
+        errs.push("Name already taken");
+      }
+      if (errs.length > 0) {
+        res.send(templates.newuser({errors: errs}));
+      } else {
+        fields.description = 'No description yet';
+        data.createUser(db, fields, function(err, uid) {
+          if (err) {
+            internalError(res, err); return;
+          }
+          doLogin(res, {ID: uid}, function(err) {
+            if (err) {
+              internalError(res, err); return;
+            }
+            res.send(templates.newuser2({uid: uid}));
+          });
+        });
+      }
+    });
   });
 });
 
@@ -316,27 +307,24 @@ app.post('/editcomment/:commentId', (req, res) => {
   let id = req.params.commentId;
   findLoginUser(req, function(err, user) {
     if (err) {
-      internalError(res, err);
-    } else {
-      data.lookupComment(db, id, (err, comment) => {
-        if (err) {
-          internalError(res, err);
-        } else if (comment == null) {
-          res.send('comment not found');
-        } else if (comment.Owner != user.ID) {
-          res.send("you don't own that comment");
-        } else {
-          let fields = _.clone(req.body);
-          db.statements.updateComment.run(fields.content, id, err => {
-            if (err) {
-              internalError(res, err);
-            } else {
-              res.redirect('/post/' + comment.Post);
-            }
-          });
-        }
-      });
+      internalError(res, err); return;
     }
+    data.lookupComment(db, id, (err, comment) => {
+      if (err) {
+        internalError(res, err);
+      } else if (comment == null) {
+        res.send('comment not found');
+      } else if (comment.Owner != user.ID) {
+        res.send("you don't own that comment");
+      } else {
+        let fields = _.clone(req.body);
+        db.statements.updateComment.run(fields.content, id, err => {
+          if (err) {
+            internalError(res, err); return;
+          }
+        });
+      }
+    });
   });
 });
 
@@ -363,10 +351,9 @@ app.get('/user/:userId', (req, res) => {
 app.get('/allusers', (req, res) => {
   db.statements.allUsers.all((err, users) => {
     if (err) {
-      internalError(err);
-    } else {
-      res.send(templates.allusers({users: users}));
+      internalError(err); return;
     }
+    res.send(templates.allusers({users: users}));
   });
 });
 
@@ -375,67 +362,63 @@ app.get('/post/:postId', (req, res) => {
   let id = req.params.postId;
   findLoginUser(req, function(err, loggedInUser) {
     if (err) {
-      internalError(res, err);
-    } else {
-      data.lookupPost(db, id, (err, post) => {
-        if (err) {
-          internalError(res, err);
-        } else if (post == undefined) {
-          res.send('post not found');
-        } else {
-          db.statements.lookupUser.get(post.Owner, function(err, owner)  {
+      internalError(res, err); return;
+    }
+    data.lookupPost(db, id, (err, post) => {
+      if (err) {
+        internalError(res, err);
+      } else if (post == undefined) {
+        res.send('post not found');
+      } else {
+        db.statements.lookupUser.get(post.Owner, function(err, owner)  {
+          if (err) {
+            internalError(res, err); return;
+          }
+          db.statements.commentsByPost.all(post.ID, function(err, comments) {
             if (err) {
-              internalError(res, err);
-            } else {
-              db.statements.commentsByPost.all(post.ID, function(err, comments) {
+              internalError(res, err); return;
+            }
+            let toConvertMarkdown = _.clone(comments);
+            toConvertMarkdown.push(post);
+            asyncMap(toConvertMarkdown, (obj, cb) => {
+              mdTexToHTML(obj.Content, (err, res) => {
                 if (err) {
-                  internalError(res, err);
+                  cb(err);
                 } else {
-                  let toConvertMarkdown = _.clone(comments);
-                  toConvertMarkdown.push(post);
-                  asyncMap(toConvertMarkdown, (obj, cb) => {
-                    mdTexToHTML(obj.Content, (err, res) => {
-                      if (err) {
-                        cb(err);
-                      } else {
-                        obj.Content = res;
-                        cb(null, null);
-                      }
-                    });
-                  }, function(err) {
-                    if (err) {
-                      internalError(res, err);
-                    } else {
-                      let toplevel = [];
-                      for (var i = 0; i < comments.length; ++i) {
-                        comments[i].Children = [];
-                        var foundParent = false;
-                        for (var j = 0; j < i; ++j) {
-                          if (comments[j].ID == comments[i].Parent) {
-                            comments[j].Children.push(comments[i]);
-                            foundParent = true;
-                            break;
-                          }
-                        }
-                        if (!foundParent) {
-                          toplevel.push(comments[i]);
-                        }
-                      }
-                      res.send(templates.post({
-                        post: post,
-                        owner: owner,
-                        user: loggedInUser,
-                        comments: toplevel
-                      }));
-                    }
-                  });
+                  obj.Content = res;
+                  cb(null, null);
                 }
               });
-            }
+            }, function(err) {
+              if (err) {
+                internalError(res, err); return;
+              }
+              let toplevel = [];
+              for (var i = 0; i < comments.length; ++i) {
+                comments[i].Children = [];
+                var foundParent = false;
+                for (var j = 0; j < i; ++j) {
+                  if (comments[j].ID == comments[i].Parent) {
+                    comments[j].Children.push(comments[i]);
+                    foundParent = true;
+                    break;
+                  }
+                }
+                if (!foundParent) {
+                  toplevel.push(comments[i]);
+                }
+              }
+              res.send(templates.post({
+                post: post,
+                owner: owner,
+                user: loggedInUser,
+                comments: toplevel
+              }));
+            });
           });
-        }
-      });
-    }
+        });
+      }
+    });
   });
 });
 
