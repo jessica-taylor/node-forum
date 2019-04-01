@@ -5,46 +5,10 @@ var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var _ = require('underscore');
 var uuidv5 = require('uuid/v5');
-var pandoc = require('node-pandoc');
 
+var common = require('./common');
 var data = require('./data');
 
-
-function asyncMap(xs, f, callback) {
-  if (xs.length == 0) {
-    callback(null, []);
-    return;
-  }
-  var returned = false;
-  var results = [];
-  var nResults = 0;
-  xs.forEach((x, i) => {
-    results.push(null);
-    f(x, (err, res) => {
-      if (returned) return;
-      if (err) {
-        returned = true;
-        callback(err);
-      } else if (results[i] == null) {
-        results[i] = [res];
-        nResults += 1;
-        if (nResults == xs.length) {
-          returned = true;
-          callback(null, results.map(r => r[0]));
-        }
-      }
-    });
-  });
-}
-
-function mdTexToHTML(mdtex, callback) {
-  pandoc(mdtex, '-f markdown -t html --mathjax', callback);
-}
-
-function internalError(res, err) {
-  res.status(500);
-  res.send('internal error: ' + err);
-}
 
 let templates = {};
 
@@ -91,11 +55,11 @@ app.use(express.static('public'));
 app.get('/', (req, res) => {
   findLoginUser(req, function(err, user) {
     if (err) {
-      internalError(res, err); return;
+      common.internalError(res, err); return;
     }
     data.latestPostsBefore(db, 9999999999999, (err, posts) => {
       if (err) {
-        internalError(res, err); return;
+        common.internalError(res, err); return;
       }
       res.send(templates.home({posts: posts, user: user}));
     });
@@ -111,15 +75,15 @@ app.post('/login', (req, res) => {
   fields.name = fields.name.trim();
   db.statements.lookupUserByName.get(fields.name, function(err, user) {
     if (err) {
-      internalError(res, err);
+      common.internalError(res, err);
     } else if (user == null) {
       res.send('user with that name not found');
-    } else if (!data.hashPassword(fields.password).equals(user.PasswordHash)) {
+    } else if (!common.hashPassword(fields.password).equals(user.PasswordHash)) {
       res.send('wrong password');
     } else {
       doLogin(res, user, function(err) {
         if (err) {
-          internalError(res, err);
+          common.internalError(res, err);
         } else {
           res.redirect('/');
         }
@@ -131,7 +95,7 @@ app.post('/login', (req, res) => {
 app.get('/signout', (req, res) => {
   findLoginUser(req, function(err, user) {
     if (err) {
-      internalError(res, err);
+      common.internalError(res, err);
     } else if (user == null) {
       res.send('not logged in');
     } else {
@@ -149,13 +113,13 @@ app.get('/newpost', (req, res) => {
 app.post('/newpost', (req, res) => {
   findLoginUser(req, function(err, user) {
     if (err) {
-      internalError(res, err); return;
+      common.internalError(res, err); return;
     }
     let fields = _.clone(req.body);
     fields.owner = user.ID;
     data.createPost(db, fields, (err, id) => {
       if (err) {
-        internalError(res, err);
+        common.internalError(res, err);
       } else {
         res.redirect('/post/' + id);
       }
@@ -167,7 +131,7 @@ app.get('/editpost/:postId', (req, res) => {
   let id = req.params.postId;
   data.lookupPost(db, id, (err, post) => {
     if (err) {
-      internalError(res, err);
+      common.internalError(res, err);
     } else if (post == null) {
       res.send('post not found');
     } else {
@@ -180,11 +144,11 @@ app.post('/editpost/:postId', (req, res) => {
   let id = req.params.postId;
   findLoginUser(req, function(err, user) {
     if (err) {
-      internalError(res, err); return;
+      common.internalError(res, err); return;
     }
     data.lookupPost(db, id, (err, post) => {
       if (err) {
-        internalError(res, err);
+        common.internalError(res, err);
       } else if (post == null) {
         res.send('post not found');
       } else if (post.Owner != user.ID) {
@@ -193,7 +157,7 @@ app.post('/editpost/:postId', (req, res) => {
         let fields = _.clone(req.body);
         db.statements.updatePost.run(fields.title, fields.content, id, err => {
           if (err) {
-            internalError(res, err);
+            common.internalError(res, err);
           } else {
             res.redirect('/post/' + id);
           }
@@ -238,14 +202,14 @@ app.post('/newuser', (req, res) => {
   }
   db.statements.lookupUserByEmail.get(fields.email, function(err, existing) {
     if (err) {
-      internalError(res, err); return;
+      common.internalError(res, err); return;
     }
     if (existing != null) {
       errs.push("Email already taken");
     }
     db.statements.lookupUserByName.get(fields.name, function(err, existing2) {
       if (err) {
-        internalError(res, err); return;
+        common.internalError(res, err); return;
       }
       if (existing2 != null) {
         errs.push("Name already taken");
@@ -256,11 +220,11 @@ app.post('/newuser', (req, res) => {
         fields.description = 'No description yet';
         data.createUser(db, fields, function(err, uid) {
           if (err) {
-            internalError(res, err); return;
+            common.internalError(res, err); return;
           }
           doLogin(res, {ID: uid}, function(err) {
             if (err) {
-              internalError(res, err); return;
+              common.internalError(res, err); return;
             }
             res.send(templates.newuser2({uid: uid}));
           });
@@ -273,7 +237,7 @@ app.post('/newuser', (req, res) => {
 app.get('/edituser', (req, res) => {
   findLoginUser(req, function(err, user) {
     if (err) {
-      internalError(res, err); return;
+      common.internalError(res, err); return;
     }
     res.send(templates.edituser({user: user}));
   });
@@ -282,7 +246,7 @@ app.get('/edituser', (req, res) => {
 app.post('/newcomment', (req, res) => {
   findLoginUser(req, function(err, user) {
     if (err) {
-      internalError(res, err);
+      common.internalError(res, err);
     } else if (user == null) {
       res.send('user not found');
     } else {
@@ -290,7 +254,7 @@ app.post('/newcomment', (req, res) => {
       fields.owner = user.ID;
       data.createComment(db, fields, (err, id) => {
         if (err) {
-          internalError(res, err);
+          common.internalError(res, err);
         } else {
           res.redirect('/post/' + fields.post);
         }
@@ -303,7 +267,7 @@ app.get('/editcomment/:commentId', (req, res) => {
   let id = req.params.commentId;
   data.lookupComment(db, id, (err, comment) => {
     if (err) {
-      internalError(res, err);
+      common.internalError(res, err);
     } else if (comment == null) {
       res.send('comment not found');
     } else {
@@ -316,11 +280,11 @@ app.post('/editcomment/:commentId', (req, res) => {
   let id = req.params.commentId;
   findLoginUser(req, function(err, user) {
     if (err) {
-      internalError(res, err); return;
+      common.internalError(res, err); return;
     }
     data.lookupComment(db, id, (err, comment) => {
       if (err) {
-        internalError(res, err);
+        common.internalError(res, err);
       } else if (comment == null) {
         res.send('comment not found');
       } else if (comment.Owner != user.ID) {
@@ -329,7 +293,7 @@ app.post('/editcomment/:commentId', (req, res) => {
         let fields = _.clone(req.body);
         db.statements.updateComment.run(fields.content, id, err => {
           if (err) {
-            internalError(res, err); return;
+            common.internalError(res, err); return;
           }
         });
       }
@@ -341,17 +305,17 @@ app.get('/user/:userId', (req, res) => {
   let id = req.params.userId;
   db.statements.lookupUser.get(id, (err, user) => {
     if (err) {
-      internalError(res, err);
+      common.internalError(res, err);
     } else if (user == undefined) {
       res.send('user not found');
     } else {
       findLoginUser(req, function(err, login) {
         if (err) {
-          internalError(res, err); return;
+          common.internalError(res, err); return;
         }
-        mdTexToHTML(user.Description, (err, desc) => {
+        common.mdTexToHTML(user.Description, (err, desc) => {
           if (err) {
-            internalError(res, err); return;
+            common.internalError(res, err); return;
           }
           user.Description = desc;
           res.send(templates.user({user: user, login: login}));
@@ -364,7 +328,7 @@ app.get('/user/:userId', (req, res) => {
 app.get('/allusers', (req, res) => {
   db.statements.allUsers.all((err, users) => {
     if (err) {
-      internalError(err); return;
+      common.internalError(err); return;
     }
     res.send(templates.allusers({users: users}));
   });
@@ -375,26 +339,26 @@ app.get('/post/:postId', (req, res) => {
   let id = req.params.postId;
   findLoginUser(req, function(err, loggedInUser) {
     if (err) {
-      internalError(res, err); return;
+      common.internalError(res, err); return;
     }
     data.lookupPost(db, id, (err, post) => {
       if (err) {
-        internalError(res, err);
+        common.internalError(res, err);
       } else if (post == undefined) {
         res.send('post not found');
       } else {
         db.statements.lookupUser.get(post.Owner, function(err, owner)  {
           if (err) {
-            internalError(res, err); return;
+            common.internalError(res, err); return;
           }
           db.statements.commentsByPost.all(post.ID, function(err, comments) {
             if (err) {
-              internalError(res, err); return;
+              common.internalError(res, err); return;
             }
             let toConvertMarkdown = _.clone(comments);
             toConvertMarkdown.push(post);
-            asyncMap(toConvertMarkdown, (obj, cb) => {
-              mdTexToHTML(obj.Content, (err, res) => {
+            common.asyncMap(toConvertMarkdown, (obj, cb) => {
+              common.mdTexToHTML(obj.Content, (err, res) => {
                 if (err) {
                   cb(err);
                 } else {
@@ -404,7 +368,7 @@ app.get('/post/:postId', (req, res) => {
               });
             }, function(err) {
               if (err) {
-                internalError(res, err); return;
+                common.internalError(res, err); return;
               }
               let toplevel = [];
               for (var i = 0; i < comments.length; ++i) {

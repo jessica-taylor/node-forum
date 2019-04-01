@@ -1,0 +1,18 @@
+
+extends ./page.jade
+
+block body
+  h1 Edit profile for #{user.Name}
+  form(method="post")
+    p Name: 
+      input(type="text", name="name", value=user.Name)
+    p Email: 
+      input(type="text", name="email", value=user.Email)
+    p Password (at least 10 characters, leave blank to keep password the same):
+      input(type="password", name="password")
+    p Confirm password:
+      input(type="password", name="password2")
+    p Description:
+    textarea(name="description", rows="50", cols="80")= user.Description
+    br
+    input(type="submit", value="Edit profile")
