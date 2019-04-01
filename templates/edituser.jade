@@ -3,6 +3,8 @@ extends ./page.jade
 
 block body
   h1 Edit profile for #{user.Name}
+  each err in errors
+    p Error: #{err}
   form(method="post")
     p Name: 
       input(type="text", name="name", value=user.Name)

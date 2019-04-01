@@ -5,71 +5,80 @@ var data = require('./data');
 
 module.exports = function(db, templates, app) {
   var pageMod = require('./page')(db, templates, app);
+
+  function validate(fields, callback) {
+    fields.name = fields.name.trim();
+    fields.email = fields.email.trim();
+    let errs = [];
+    if (fields.password != fields.password2) {
+      errs.push("Passwords don't match");
+    }
+    if (fields.password.length < 10) {
+      errs.push("Password must be at least 10 characters");
+    }
+    if (!/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(fields.email)) {
+      errs.push("Invalid email address");
+    }
+    if (fields.name.length < 1) {
+      errs.push("Name must not be empty");
+    }
+    for (var i = 0; i < fields.name.length; ++i) {
+      if (fields.name.charCodeAt(i) < 128 && !/[-a-zA-Z0-9_ ]/.test(fields.name[i])) {
+        errs.push("Name must consist of alphanumeric characters, -, _, or space.");
+        break;
+      }
+    }
+    for (var i = 0; i < fields.name.length - 1; ++i) {
+      if (fields.name[i] == ' ' && fields.name[i+1] == ' ') {
+        errs.push("Name must not have two spaces in a row.");
+        break;
+      }
+    }
+    db.statements.lookupUserByEmail.get(fields.email, function(err, existing) {
+      if (err) {
+        callback(err); return;
+      }
+      if (existing != null) {
+        errs.push("Email already taken");
+      }
+      db.statements.lookupUserByName.get(fields.name, function(err, existing2) {
+        if (err) {
+          callback(err); return;
+        }
+        if (existing2 != null) {
+          errs.push("Name already taken");
+        }
+        callback(null, errs, fields);
+      });
+    });
+  }
+
   function register() {
     app.get('/newuser', (req, res) => {
       res.send(templates.newuser({errors: []}));
     });
 
     app.post('/newuser', (req, res) => {
-      let fields = _.clone(req.body);
-      fields.name = fields.name.trim();
-      fields.email = fields.email.trim();
-      let errs = [];
-      if (fields.password != fields.password2) {
-        errs.push("Passwords don't match");
-      }
-      if (fields.password.length < 10) {
-        errs.push("Password must be at least 10 characters");
-      }
-      if (!/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(fields.email)) {
-        errs.push("Invalid email address");
-      }
-      if (fields.name.length < 1) {
-        errs.push("Name must not be empty");
-      }
-      for (var i = 0; i < fields.name.length; ++i) {
-        if (fields.name.charCodeAt(i) < 128 && !/[-a-zA-Z0-9_ ]/.test(fields.name[i])) {
-          errs.push("Name must consist of alphanumeric characters, -, _, or space.");
-          break;
-        }
-      }
-      for (var i = 0; i < fields.name.length - 1; ++i) {
-        if (fields.name[i] == ' ' && fields.name[i+1] == ' ') {
-          errs.push("Name must not have two spaces in a row.");
-          break;
-        }
-      }
-      db.statements.lookupUserByEmail.get(fields.email, function(err, existing) {
+      validate(_.clone(req.body), function(err, errs, fields) {
         if (err) {
           common.internalError(res, err); return;
         }
-        if (existing != null) {
-          errs.push("Email already taken");
-        }
-        db.statements.lookupUserByName.get(fields.name, function(err, existing2) {
-          if (err) {
-            common.internalError(res, err); return;
-          }
-          if (existing2 != null) {
-            errs.push("Name already taken");
-          }
-          if (errs.length > 0) {
-            res.send(templates.newuser({errors: errs}));
-          } else {
-            fields.description = 'No description yet';
-            data.createUser(db, fields, function(err, uid) {
+        if (errs.length > 0) {
+          res.send(templates.newuser({errors: errs}));
+        } else {
+          fields.description = 'No description yet';
+          data.createUser(db, fields, function(err, uid) {
+            if (err) {
+              common.internalError(res, err); return;
+            }
+            pageMod.doLogin(res, {ID: uid}, function(err) {
               if (err) {
                 common.internalError(res, err); return;
               }
-              pageMod.doLogin(res, {ID: uid}, function(err) {
-                if (err) {
-                  common.internalError(res, err); return;
-                }
-                res.send(templates.newuser2({uid: uid}));
-              });
+              res.send(templates.newuser2({uid: uid}));
             });
-          }
-        });
+          });
+        }
       });
     });
     app.get('/login', (req, res) => {
@@ -113,8 +122,16 @@ module.exports = function(db, templates, app) {
     });
 
 
-
     app.get('/edituser', (req, res) => {
+      pageMod.findLoginUser(req, function(err, user) {
+        if (err) {
+          common.internalError(res, err); return;
+        }
+        res.send(templates.edituser({user: user}));
+      });
+    });
+
+    app.post('/edituser', (req, res) => {
       pageMod.findLoginUser(req, function(err, user) {
         if (err) {
           common.internalError(res, err); return;
