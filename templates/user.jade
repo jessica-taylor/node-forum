@@ -5,5 +5,8 @@ block head
 
 block body
   h1= user.Name
+  br
+  if login != null && login.ID == user.ID
+    a(href = '/edituser') Edit profile
   div !{user.Description}
   a(href = '/') Home

@@ -64,7 +64,7 @@ function prepareStatements(db) {
     lookupUserByName: "select * from User where Name = ?",
     lookupPost: "select * from Post where ID = ?",
     lookupComment: "select Comment.*, User.Name from Comment inner join User on Comment.Owner = User.ID where Comment.ID = ?",
-    updateUser: "update User set Name = ?, Description = ? where ID = ?",
+    updateUser: "update User set Name = ?, Email = ?, Description = ? where ID = ?",
     setLoginToken: "update User set LoginToken = ?, LoginTokenTime = ? where ID = ?",
     updatePost: "update Post set Title = ?, Content = ? where ID = ?",
     updateComment: "update Comment set Content = ? where ID = ?",

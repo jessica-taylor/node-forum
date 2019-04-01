@@ -270,6 +270,15 @@ app.post('/newuser', (req, res) => {
   });
 });
 
+app.get('/edituser', (req, res) => {
+  findLoginUser(req, function(err, user) {
+    if (err) {
+      internalError(res, err); return;
+    }
+    res.send(templates.edituser({user: user}));
+  });
+});
+
 app.post('/newcomment', (req, res) => {
   findLoginUser(req, function(err, user) {
     if (err) {
@@ -336,14 +345,18 @@ app.get('/user/:userId', (req, res) => {
     } else if (user == undefined) {
       res.send('user not found');
     } else {
-      mdTexToHTML(user.Description, (err, desc) => {
+      findLoginUser(req, function(err, login) {
         if (err) {
           internalError(res, err); return;
         }
-        user.Description = desc;
-        res.send(templates.user({user: user}));
-      })
-
+        mdTexToHTML(user.Description, (err, desc) => {
+          if (err) {
+            internalError(res, err); return;
+          }
+          user.Description = desc;
+          res.send(templates.user({user: user, login: login}));
+        })
+      });
     }
   });
 });
