@@ -425,7 +425,6 @@ app.get('/post/:postId', (req, res) => {
 app.listen(4000, () => console.log('Express server running'));
 
 // TODO:
-//   - pandoc! pandoc -f markdown foo.md -o foo.html --mathjax
 //   - comment permalink
 //   - reset password
 //   - change password
