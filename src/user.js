@@ -6,6 +6,15 @@ var data = require('./data');
 module.exports = function(db, templates, app) {
   var pageMod = require('./page')(db, templates, app);
 
+  function validatePassword(fields, errs) {
+    if (fields.password != fields.password2) {
+      errs.push("Passwords don't match");
+    }
+    if (fields.password.length < 10) {
+      errs.push("Password must be at least 10 characters");
+    }
+  }
+
   function validate(prevUser, fields, callback) {
     let prevID = prevUser ? prevUser.ID : null;
     fields.name = fields.name.trim();
@@ -17,12 +26,7 @@ module.exports = function(db, templates, app) {
       fields.description = fields.description.trim();
     }
     if (prevUser == null || fields.password != '' || fields.password2 != '') {
-      if (fields.password != fields.password2) {
-        errs.push("Passwords don't match");
-      }
-      if (fields.password.length < 10) {
-        errs.push("Password must be at least 10 characters");
-      }
+      validatePassword(fields, errs);
     }
     if (!/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(fields.email)) {
       errs.push("Invalid email address");
@@ -205,18 +209,67 @@ module.exports = function(db, templates, app) {
       let fields = _.clone(req.body);
       db.statements.lookupUserByName.get(fields.name, (err, user) => {
         if (err) {
-          common.internalError(err);
+          common.internalError(res, err);
         } else if (user == null) {
           res.send(templates.forgotpassword({errors: ['User with name ' + fields.name + ' not found']}));
         } else {
           let token = pageMod.getUUID();
           db.statements.setResetPasswordToken.run(token, Date.now(), user.ID, err => {
             if (err) {
-              common.internalError(err); return;
+              common.internalError(res, err); return;
             }
             console.log('token is', token);
             res.send(templates.forgotpassword2({}));
           });
+        }
+      });
+    });
+
+    app.get('/resetpassword', (req, res) => {
+      let uid = req.query.uid;
+      let token = req.query.token;
+      db.statements.lookupUser.get(uid, (err, user) => {
+        if (err) {
+          common.internalError(res, err);
+        } else if (user == null) {
+          res.send('user not found');
+        } else if (token != user.ResetPasswordToken) {
+          res.send("bad reset password token.  perhaps someone else requested a reset password link for the same user?");
+        } else {
+          res.send(templates.resetpassword({user: user, token: token}));
+        }
+      });
+    });
+
+    app.post('/resetpassword', (req, res) => {
+      let fields = _.clone(req.body);
+      let uid = fields.uid;
+      let token = fields.token;
+      db.statements.lookupUser.get(uid, (err, user) => {
+        if (err) {
+          common.internalError(res, err);
+        } else if (user == null) {
+          res.send('user not found');
+        } else if (token != user.ResetPasswordToken) {
+          res.send("bad reset password token.  perhaps someone else requested a reset password link for the same user?");
+        } else {
+          let errs = [];
+          validatePassword(fields, errs);
+          if (errs.length > 0) {
+            res.send(errs[0]);
+          } else {
+            db.statements.setPassword.run(data.hashPassword(fields.password), uid, err => {
+              if (err) {
+                common.internalError(res, err); return;
+              }
+              pageMod.doLogin(res, {ID: uid}, function(err) {
+                if (err) {
+                  common.internalError(res, err); return;
+                }
+                res.send(templates.resetpassword2({}));
+              });
+            });
+          }
         }
       });
     });
