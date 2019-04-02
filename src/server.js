@@ -58,3 +58,5 @@ app.listen(4000, () => console.log('Express server running'));
 //   - comment permalink
 //   - big frontpage
 //   - user profile posts and comments
+//   - inbox
+//   - pm
