@@ -1,21 +1,20 @@
 var _ = require('underscore');
 var nodemailer = require('nodemailer');
+var nodemailerWellKnown = require('nodemailer-wellknown');
 
 var common = require('./common');
 var data = require('./data');
 
 
 var transporter;
-if (data.config.mailServer) {
-  transporter = nodemailer.createTransport({
-    host: data.config.mailServer,
-    port: 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: data.config.mailUser, // generated ethereal user
-      pass: data.config.mailPass // generated ethereal password
-    }
-  });
+if (data.config.mailService) {
+  var cfg = nodemailerWellKnown(mailService);
+  cfg.auth = {
+    user: data.config.mailUser,
+    pass: data.config.mailPassword
+  };
+  console.log('cfg', cfg);
+  transporter = nodemailer.createTransport(cfg);
 } else {
   transporter = null;
 }
@@ -236,15 +235,18 @@ module.exports = function(db, templates, app) {
               common.internalError(res, err); return;
             }
             if (transporter) {
+              console.log('call sendmail');
               transporter.sendMail({
-                from: 'Forum admin',
+                from: data.config.mailUser,
                 to: user.Email,
                 subject: "Reset password",
                 text: 'Reset your password here: ' + data.config.domain + '/resetpassword?uid=' + user.ID + '&token=' + token
-              }).then(() => {
+              }, function(err, info) {
+                console.log('info', info);
+                if (err) {
+                  common.internalError(res, err); return;
+                }
                 res.send(templates.forgotpassword2({}));
-              }).catch(function(err) {
-                common.internalError(res, err);
               });
             } else {
               console.log('token for ' + user.Email + ' is ' + token);

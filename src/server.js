@@ -12,16 +12,17 @@ var data = require('./data');
 let db = data.getDatabase();
 let templates = {};
 
-fs.readdirSync(__dirname + '/../templates').forEach(fileName => {
+let templatesDir = __dirname + '/../templates';
+fs.readdirSync(templatesDir).forEach(fileName => {
   templates[fileName.replace('.jade', '')] =
-    jade.compileFile('templates/' + fileName, {});
+    jade.compileFile(templatesDir + '/' + fileName, {});
 });
 
 let app = express();
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
-app.use(express.static('public'));
+app.use(express.static(__dirname + '/../public'));
 
 var pageMod = require('./page')(db, templates, app);
 var postMod = require('./post')(db, templates, app);
@@ -42,7 +43,7 @@ app.get('/', (req, res) => {
         common.internalError(res, err); return;
       }
       res.send(templates.home({
-        forumName: data.config.forumName || 'Forum',
+        forumTitle: data.config.forumTitle || 'Forum',
         posts: posts,
         user: user}));
     });
@@ -55,6 +56,5 @@ app.listen(4000, () => console.log('Express server running'));
 
 // TODO:
 //   - comment permalink
-//   - email reset password link
 //   - big frontpage
 //   - user profile posts and comments
