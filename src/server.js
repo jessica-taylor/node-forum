@@ -41,7 +41,10 @@ app.get('/', (req, res) => {
       if (err) {
         common.internalError(res, err); return;
       }
-      res.send(templates.home({posts: posts, user: user}));
+      res.send(templates.home({
+        forumName: data.config.forumName || 'Forum',
+        posts: posts,
+        user: user}));
     });
   });
 });

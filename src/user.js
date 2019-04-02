@@ -4,6 +4,22 @@ var nodemailer = require('nodemailer');
 var common = require('./common');
 var data = require('./data');
 
+
+var transporter;
+if (data.config.mailServer) {
+  transporter = nodemailer.createTransport({
+    host: data.config.mailServer,
+    port: 587,
+    secure: false, // true for 465, false for other ports
+    auth: {
+      user: data.config.mailUser, // generated ethereal user
+      pass: data.config.mailPass // generated ethereal password
+    }
+  });
+} else {
+  transporter = null;
+}
+
 module.exports = function(db, templates, app) {
   var pageMod = require('./page')(db, templates, app);
 
@@ -219,8 +235,21 @@ module.exports = function(db, templates, app) {
             if (err) {
               common.internalError(res, err); return;
             }
-            console.log('token is', token);
-            res.send(templates.forgotpassword2({}));
+            if (transporter) {
+              transporter.sendMail({
+                from: 'Forum admin',
+                to: user.Email,
+                subject: "Reset password",
+                text: 'Reset your password here: ' + data.config.domain + '/resetpassword?uid=' + user.ID + '&token=' + token
+              }).then(() => {
+                res.send(templates.forgotpassword2({}));
+              }).catch(function(err) {
+                common.internalError(res, err);
+              });
+            } else {
+              console.log('token for ' + user.Email + ' is ' + token);
+              res.send(templates.forgotpassword2({}));
+            }
           });
         }
       });

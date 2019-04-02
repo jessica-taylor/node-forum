@@ -1,8 +1,18 @@
+var fs = require('fs');
 var crypto = require('crypto');
 var sqlite = require('sqlite3').verbose();
 var util = require('util');
+var yaml = require('yaml');
 
 var common = require('./common');
+
+var config;
+
+try {
+  config = yaml.parse(fs.readFileSync('config.yaml', 'utf8'));
+} catch(err) {
+  config = {};
+}
 
 let salt = '0rXKWHc3YoO3wrTUknuc';
 
@@ -185,6 +195,7 @@ function latestPostsBefore(db, time, cb) {
 }
 
 module.exports = {
+  config: config,
   getDatabase: getDatabase,
   hashPassword: hashPassword,
   createUser: createUser,

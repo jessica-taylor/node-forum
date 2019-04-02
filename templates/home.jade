@@ -3,7 +3,7 @@ extends ./page.jade
 - if (posts == undefined) posts = []
 
 block body
-  h1 Information ecology forum
+  h1= forumName
   p
     a(href = '/allusers') All users
   if user
