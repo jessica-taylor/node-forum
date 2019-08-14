@@ -23,4 +23,5 @@ block body
       span.author_name by
         =' '
         a(href = '/user/' + post.Owner)= post.Name
+        =' (' + post.NumComments + ' comment' + (post.NumComments == 1 ? '' : 's') + ')'
 
