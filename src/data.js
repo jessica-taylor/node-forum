@@ -46,7 +46,8 @@ let tables = {
            "Title tinytext not null",
            "Content mediumtext not null",
            "CreationTime integer not null",
-           "ID integer not null primary key autoincrement"],
+           "ID integer not null primary key autoincrement",
+           "NumComments integer not null"],
   "Comment": ["Owner integer not null",
               "Post integer not null",
               "Parent integer",
@@ -70,9 +71,8 @@ function makeTables(db) {
 function prepareStatements(db) {
   let stmts = {
     createUser: "insert into User (Name, Description, CreationTime, Email, PasswordHash, EmailConfirmed) values (?, ?, ?, ?, ?, ?)",
-    createPost: "insert into Post (Owner, Title, Content, CreationTime) values (?, ?, ?, ?)",
+    createPost: "insert into Post (Owner, Title, Content, CreationTime, NumComments) values (?, ?, ?, ?, 0)",
     createComment: "insert into Comment (Owner, Post, Parent, Content, CreationTime) values (?, ?, ?, ?, ?)",
-    lastID: "select last_insert_rowid()",
     lookupUser: "select * from User where ID = ?",
     lookupUserByEmail: "select * from User where Email = ?",
     lookupUserByName: "select * from User where Name = ?",
@@ -92,7 +92,8 @@ function prepareStatements(db) {
     latestPostsByUserBefore: "select ID, Title, CreationTime from Post where CreationTime < ? and Owner = ? order by CreationTime desc",
     latestCommentsByUserBefore: "select ID, Content from Comment where CreationTime < ? and Owner = ? order by CreationTime desc",
     commentsByPost: "select Comment.*, User.Name from Comment inner join User on Comment.Owner = User.Id where Post = ? order by CreationTime asc",
-    allUsers: "select ID, Name from User"
+    allUsers: "select ID, Name from User",
+    incrementPostComments: "update Post set NumComments = NumComments + 1 where ID = ?"
   };
   let prepared = {};
   for (let k in stmts) {
@@ -118,16 +119,12 @@ function makeIndices(db) {
 }
 
 function createUser(db, fields, cb) {
-  db.serialize(() => {
-    db.statements.createUser.run(fields.name, fields.description, Date.now(), fields.email, hashPassword(fields.password), true, err => {
-      if (err) {
-        cb(err, null);
-      } else {
-        db.statements.lastID.get((err, id) => {
-          cb(err, id && id['last_insert_rowid()']);
-        });
-      }
-    });
+  db.statements.createUser.run(fields.name, fields.description, Date.now(), fields.email, hashPassword(fields.password), true, function(err) {
+    if (err) {
+      cb(err, null);
+    } else {
+      cb(err, this.lastID);
+    }
   });
 }
 
@@ -136,30 +133,25 @@ function updateUser(db, id, fields, cb) {
 };
 
 function createPost(db, fields, cb) {
-  db.serialize(() => {
-    db.statements.createPost.run(fields.owner, fields.title, fields.content, Date.now(), err => {
-      if (err) {
-        cb(err, null);
-      } else {
-        db.statements.lastID.get((err, id) => {
-          cb(err, id && id['last_insert_rowid()']);
-        });
-      }
-    });
+  db.statements.createPost.run(fields.owner, fields.title, fields.content, Date.now(), function(err) {
+    if (err) {
+      cb(err, null);
+    } else {
+      cb(err, this.lastID);
+    }
   });
 }
 
 function createComment(db, fields, cb) {
-  db.serialize(() => {
-    db.statements.createComment.run(fields.owner, fields.post, fields.parent, fields.content, Date.now(), err => {
-      if (err) {
-        cb(err, null);
-      } else {
-        db.statements.lastID.get((err, id) => {
-          cb(err, id && id['last_insert_rowid()']);
-        });
-      }
-    });
+  db.statements.createComment.run(fields.owner, fields.post, fields.parent, fields.content, Date.now(), function(err) {
+    if (err) {
+      cb(err, null);
+    } else {
+      let commentID = this.lastID;
+      db.statements.incrementPostComments.run(fields.post, err => {
+        cb(err, commentID);
+      });
+    }
   });
 }
 

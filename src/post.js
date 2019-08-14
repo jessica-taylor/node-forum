@@ -22,6 +22,7 @@ module.exports = function(db, templates, app) {
           if (err) {
             common.internalError(res, err);
           } else {
+            console.log('id is', id);
             res.redirect('/post/' + id);
           }
         });
