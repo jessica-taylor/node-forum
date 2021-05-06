@@ -17,7 +17,7 @@
     "nodemailer": "^6.0.0",
     "nodemailer-wellknown": "^0.2.3",
     "sqlite3": "^4.0.6",
-    "underscore": "^1.9.1",
+    "underscore": "^1.12.1",
     "uuid": "^3.3.2",
     "yaml": "^1.4.0"
   },
